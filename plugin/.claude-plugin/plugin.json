@@ -1,0 +1,10 @@
+{
+	"name": "preflight",
+	"version": "0.1.0",
+	"description": "Automated preflight review of superpowers spec and plan documents. Detects newly written specs/plans, runs an adversarial review (Author/Reviewer dialogue for specs, a 6-stage review chain for plans), applies all fixable findings with a snapshot+diff, and gives a Go/No-Go.",
+	"author": { "name": "CallMeTechie", "url": "https://github.com/CallMeTechie" },
+	"homepage": "https://github.com/CallMeTechie/preflight",
+	"repository": { "type": "git", "url": "https://github.com/CallMeTechie/preflight" },
+	"license": "MIT",
+	"keywords": ["review", "spec", "plan", "superpowers", "hook", "quality", "adversarial"]
+}
