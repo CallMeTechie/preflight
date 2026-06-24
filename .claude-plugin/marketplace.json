@@ -4,10 +4,6 @@
     "name": "CallMeTechie",
     "url": "https://github.com/CallMeTechie"
   },
-  "metadata": {
-    "description": "Marketplace for the preflight plugin.",
-    "homepage": "https://github.com/CallMeTechie/preflight"
-  },
   "plugins": [
     {
       "name": "preflight",
