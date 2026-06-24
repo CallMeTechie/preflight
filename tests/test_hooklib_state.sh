@@ -55,5 +55,15 @@ lines_bp="$(grep -c '' "$state3" 2>/dev/null || echo 0)"
 grep -qF "hashB" "$state3" && ok "record_reviewed: backslash path -> latest hash present" || bad "record_reviewed: backslash path -> latest hash missing"
 grep -qF "hashA" "$state3" && bad "record_reviewed: backslash path -> old hash still present" || ok "record_reviewed: backslash path -> old hash replaced"
 
+# preflight_record_reviewed: control-char path must fail (guard) and must not write
+state4="$tmp/.preflight-reviewed4"
+preflight_record_reviewed "$state4" "$f" "clean_hash"  # seed one clean entry
+lines_before="$(grep -c '' "$state4" 2>/dev/null || echo 0)"
+preflight_record_reviewed "$state4" "$tmp/x"$'\n'"y" "$h"
+rc_bad=$?
+[ "$rc_bad" -ne 0 ] && ok "record_reviewed: control-char path -> non-zero return" || bad "record_reviewed: control-char path -> expected non-zero return"
+lines_after="$(grep -c '' "$state4" 2>/dev/null || echo 0)"
+[ "$lines_after" -eq "$lines_before" ] && ok "record_reviewed: control-char path -> no line written" || bad "record_reviewed: control-char path -> line count changed from $lines_before to $lines_after"
+
 rm -rf "$tmp"
 exit $fail

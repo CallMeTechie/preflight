@@ -16,8 +16,9 @@ the main loop handles only consolidation, judgment, and fix decisions.
 - Read the file at `path`. If it is empty or has fewer than ~15 substantive lines:
   report "too little content for review" and abort.
 - **Plan mode:** locate the associated spec. (1) If the plan contains a line
-  `Spec: <path>`, use that. (2) Otherwise apply a heuristic based on a matching
-  date/topic in the filename under `docs/superpowers/specs/`; ask the user if
+  `Spec: <path>`, use that. (2) Otherwise apply a heuristic: search both
+  `docs/superpowers/specs/` **and** the plan file's own directory; match on
+  filename (date/topic) **or** document heading/topic; ask the user if
   ambiguous. If no spec is found, proceed without the consistency dimension
   (state this explicitly).
 
