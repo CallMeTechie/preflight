@@ -30,7 +30,7 @@ The lock suppresses review-own edits to the document in the hook.
 
 ## Step 3 — Fact-check
 Dispatch a `cheap-explorer` with the prompt from `references/factcheck.md` plus
-the document content. Only carry findings of type `missing-incorrectly` /
+the document content. Only carry findings of type `missing` /
 `deviating` into the review.
 
 ## Step 4 — Review
@@ -73,7 +73,7 @@ reason:
 the answer is always "no further round", regardless of how broad the changes were.
 
 If a re-review round starts, **refresh the lock timestamp first**:
-`date +%s > .claude/.preflight-running`. This prevents the 1800 s staleness
+`date +%s > <project>/.claude/.preflight-running`. This prevents the 1800 s staleness
 threshold from expiring in the middle of a long re-review.
 
 During re-review the lock remains active and Steps 4–5 apply again.

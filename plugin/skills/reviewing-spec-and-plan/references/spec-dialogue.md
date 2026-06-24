@@ -1,26 +1,26 @@
-# Spec-Review: Author<->Reviewer-Dialog (cheap-reviewer)
+# Spec Review: Author↔Reviewer Dialogue (cheap-reviewer)
 
-Simuliere ein Review-Gespraech zwischen zwei Engineers ueber das SPEC-Dokument.
+Simulate a review conversation between two engineers about the SPEC document.
 
-- **Author:** verteidigt Entscheidungen, erklaert Tradeoffs, schlaegt beim
-  Nachgeben konkreten Ersatztext vor.
-- **Reviewer:** Senior; bringt PRO RUNDE mindestens einen substanziellen Einwand
-  mit konkretem Ersatztext (nicht nur Beschreibung).
+- **Author:** defends decisions, explains trade-offs, proposes concrete replacement
+  text when conceding.
+- **Reviewer:** Senior; raises at least one substantive objection per round with
+  concrete replacement text (not just a description).
 
-Regeln: Runden-Label `### Round N — [Topic]`. Der Author muss mindestens einmal
-pro Runde verteidigen, statt sofort einzuknicken. Bei geloesten Topics frueh
-beenden: `Consensus reached after N rounds.` Max-Runden = uebergeben (Default 5).
+Rules: Round label `### Round N — [Topic]`. The Author must defend at least once
+per round instead of immediately conceding. Close resolved topics early:
+`Consensus reached after N rounds.` Max rounds = passed in (default 5).
 
-**Topic-Prioritaet (in dieser Reihenfolge, leere Topics ueberspringen):**
-1. Vollstaendigkeit — Platzhalter, TBD, undefinierte Anforderungen, fehlende Erfolgskriterien
-2. Klarheit/Ambiguitaet — zweideutig interpretierbare Anforderungen, vage Begriffe
-3. Interne Konsistenz — sich widersprechende Abschnitte; Architektur != Feature-Beschreibung
-4. Scope & YAGNI — zu gross fuer einen Plan? unnoetige Features? Decomposition noetig?
-5. Realismus — nutze die uebergebene Faktenliste (`fehlt-faelschlich`/`abweichend`)
-6. Risiken/Blind Spots — Failure-Modes, optimistische Abkuerzungen, Edge Cases
+**Topic priority (in this order, skip empty topics):**
+1. Completeness — placeholders, TBDs, undefined requirements, missing success criteria
+2. Clarity / Ambiguity — requirements open to multiple interpretations, vague terms
+3. Internal Consistency — contradicting sections; architecture ≠ feature description
+4. Scope & YAGNI — too large for one plan? unnecessary features? decomposition needed?
+5. Realism — use the passed-in fact list (`missing`/`deviating`)
+6. Risks / Blind Spots — failure modes, optimistic shortcuts, edge cases
 
-**Rueckgabe (strukturiert):** volles Transkript + `agreed_changes` (mit
-konkretem Ersatztext + Fundstelle), `open_disagreements`, `action_items`
-(Prioritaet Blocker/Wichtig/Optional), `design_forks` (Befunde, deren Behebung
-eine echte Designentscheidung ohne objektiv richtige Antwort verlangt),
-Summary-Tabelle (Topic | Runden | Action Items).
+**Return (structured):** full transcript + `agreed_changes` (with concrete replacement
+text + source location), `open_disagreements`, `action_items`
+(priority Blocker/Important/Optional), `design_forks` (findings whose resolution
+requires a real design decision with no objectively correct answer),
+summary table (Topic | Rounds | Action Items).
