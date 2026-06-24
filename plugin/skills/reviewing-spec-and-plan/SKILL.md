@@ -34,9 +34,10 @@ dem Dokumentinhalt. Nimm nur Befunde `fehlt-faelschlich`/`abweichend` in den Rev
 - **Spec-Modus:** Dispatch EINEN `cheap-reviewer` mit `references/spec-dialogue.md`
   (Dokument + Faktenliste + Max-Runden).
 - **Plan-Modus:** Dispatch FUENF `cheap-reviewer` PARALLEL, je ein Mandat aus
-  `references/plan-chain.md` (Stufen 1–5), jeweils mit Plan + Spec + Faktenliste.
+  `references/plan-chain.md` (Stufen 1–5), jeweils mit Plan + Spec + Faktenliste;
+  Stufe 6 (Consolidator) ist Schritt 5.
 
-## Schritt 5 — Consolidation, Snapshot, Fixes, Diff (Hauptloop)
+## Schritt 5 — Consolidation, Snapshot, Fixes, Diff (Hauptloop) (= Stufe 6 der Plan-Chain: Consolidator)
 1. Merge/dedupliziere die Findings; validiere jeden Befund adversariell, bevor du
    ihn anwendest (kein schwacher Einwand wird blind uebernommen).
 2. **Snapshot vor dem ersten Fix:** ist die Datei in einem Git-Repo und uncommittet,
