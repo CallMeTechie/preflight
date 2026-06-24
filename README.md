@@ -26,12 +26,17 @@ A dedicated fact-check classifies every code reference as *missing* (a real find
 
 ## Installation
 
-```bash
-# From the registry (once published)
-/plugin install preflight
+Install via the marketplace:
 
-# From a local path
-/plugin install /path/to/preflight/plugin
+```bash
+claude plugin marketplace add CallMeTechie/preflight
+claude plugin install preflight@preflight
+```
+
+Or from a local checkout:
+
+```bash
+claude plugin install /path/to/preflight/plugin
 ```
 
 ## Commands
@@ -42,10 +47,6 @@ A dedicated fact-check classifies every code reference as *missing* (a real find
 | `/preflight-plan [path] [max-rounds]` | Review a plan via the 6-stage chain against its spec. Defaults to the newest file in `docs/superpowers/plans/`. |
 
 The hook triggers the same review automatically after a spec/plan is written.
-
-## Specification
-
-See [`docs/superpowers/specs/2026-06-24-preflight-design.md`](docs/superpowers/specs/2026-06-24-preflight-design.md) for the full design, and [`docs/superpowers/plans/2026-06-24-preflight.md`](docs/superpowers/plans/2026-06-24-preflight.md) for the implementation plan.
 
 ## License
 

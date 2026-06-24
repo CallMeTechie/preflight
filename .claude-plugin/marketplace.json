@@ -1,0 +1,19 @@
+{
+  "name": "preflight",
+  "owner": {
+    "name": "CallMeTechie",
+    "url": "https://github.com/CallMeTechie"
+  },
+  "metadata": {
+    "description": "Marketplace for the preflight plugin.",
+    "homepage": "https://github.com/CallMeTechie/preflight"
+  },
+  "plugins": [
+    {
+      "name": "preflight",
+      "source": "./plugin",
+      "version": "0.1.0",
+      "description": "Automated preflight review of superpowers spec and plan documents. Detects newly written specs/plans, runs an adversarial review (Author/Reviewer dialogue for specs, a 6-stage review chain for plans), applies all fixable findings with a snapshot+diff, and gives a Go/No-Go."
+    }
+  ]
+}
