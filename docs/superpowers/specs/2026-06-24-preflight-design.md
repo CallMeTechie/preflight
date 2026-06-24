@@ -112,21 +112,43 @@ preflight/
    - `**/docs/superpowers/specs/*-design.md` → Modus `spec`
    - `**/docs/superpowers/plans/*.md` → Modus `plan`
    - sonst: exit 0 (nichts tun).
-3. **Debounce:** Berechnet den SHA-256 des Datei-Inhalts. Schlägt in der
+3. **In-Progress-Lock (zwingend, sonst greift die Anti-Loop-Garantie nicht):**
+   Existiert die Marker-Datei `<project>/.claude/.preflight-running` → exit 0.
+   Grund: Während ein Review läuft, editiert der Skill das Dokument selbst —
+   jeder dieser Edits feuert diesen Hook erneut. Der Lock unterdrückt diese
+   review-eigenen Edits, sodass kein verschachtelter/gespammter Nudge entsteht.
+4. **Debounce:** Berechnet den SHA-256 des Datei-Inhalts. Schlägt in der
    State-Datei `<project>/.claude/.preflight-reviewed` nach (Format: eine Zeile
    pro Pfad, `<sha>\t<pfad>`). Ist der aktuelle Hash dort bereits als reviewt
    vermerkt → exit 0 (kein erneuter Nudge).
-4. Andernfalls gibt der Hook `additionalContext` aus (PostToolUse-JSON-Output),
+5. Andernfalls gibt der Hook `additionalContext` aus (PostToolUse-JSON-Output),
    der den Hauptloop anweist: *„Eine <Modus>-Datei wurde nach <Pfad> geschrieben.
    Bevor du fortfährst, invoke die Skill `reviewing-spec-and-plan` mit Modus=<Modus>
    und Pfad=<Pfad>."*
 
-**Wichtig:** Der Hook schreibt **nicht** selbst in die State-Datei — das macht der
-Skill nach erfolgreichem Review (mit dem Post-Fix-Hash). So lösen die Fixes des
-Reviews keinen neuen Nudge aus; eine spätere echte Überarbeitung durch den Nutzer
-(neuer Hash) dagegen schon.
+**Lock-Protokoll (Skill-Seite):** Der Skill legt zu Beginn
+`.claude/.preflight-running` an, macht alle Fix-Edits, entfernt den Marker
+**erst danach** und schreibt **dann** den finalen Post-Fix-Hash in
+`.preflight-reviewed`. Reihenfolge ist entscheidend: Lock → editieren → Lock weg
+→ State schreiben. So feuern die review-eigenen Edits ins Leere (Lock aktiv), und
+der finale Zustand ist als reviewt vermerkt. Eine spätere echte Überarbeitung
+durch den Nutzer (neuer Hash, kein Lock) triggert dagegen wieder.
+
+**Crash-Sicherheit:** Bricht der Skill ab und lässt den Lock liegen, würde der
+Hook dauerhaft schweigen. Daher trägt der Marker einen Zeitstempel; ist er älter
+als eine Schwelle (z.B. 30 min), ignoriert der Hook ihn und nudged trotzdem
+(fail-open).
 
 **Nicht blockierend:** Der Hook gibt nie einen Block-Exit-Code zurück.
+
+**Advisory nudge, kein deterministisches Gate (bewusst akzeptiert):** Da preflight
+die superpowers-Skills nicht verändert (Nicht-Ziel), hat es keinen Hebel in deren
+Kontrollfluss. Der Hook injiziert nach dem Write *best effort* einen Reminder; ob
+und wann der Hauptloop ihn relativ zu brainstormings/writing-plans' eigenen
+Schritten abarbeitet, ist nicht garantiert. Das wird hier ausdrücklich akzeptiert:
+preflight ist ein Anstoß plus zuverlässiger manueller Command, kein erzwungenes
+Tor. Wer hartes Gating will, müsste die superpowers-Skills antasten — bewusst
+nicht Teil dieses Designs.
 
 ## Baustein 2: Skill (Gehirn) — `reviewing-spec-and-plan`
 
@@ -143,8 +165,21 @@ Hook-Reminder oder ein Slash-Command-Argument.
 ### Schritt 2 — Codebase-Faktencheck (cheap-explorer, Haiku)
 Sammelt für die Realismus-Dimension Fakten gegen die echte Codebase: existieren
 referenzierte Pfade, Dateien, APIs, Funktionen? Stimmen die Annahmen über die
-vorhandene Struktur? Gibt eine kompakte Faktenliste zurück (existiert / existiert
-nicht / abweichend), die den Reviewern als Grundlage dient.
+vorhandene Struktur?
+
+**Pflicht-Klassifizierung jedes Befunds** (sonst ist die Dimension auf
+Greenfield-Arbeit netto schädlich): Bevor ein "existiert nicht"-Befund in die
+Synthese darf, muss er einer Kategorie zugeordnet werden:
+- **Annahme über Bestehendes, das fehlt** → echter Befund (das Dokument setzt
+  etwas Vorhandenes voraus, das es real nicht gibt).
+- **Vom Dokument als zu erstellen deklariert** → **kein Befund** (Deliverable —
+  ein Plan, der `archive_luminance.rs` anlegt, darf nicht dafür gerügt werden,
+  dass die Datei noch nicht existiert).
+
+Der Faktencheck liest dazu den Dokumentkontext mit (was deklariert das Dokument
+als Neubau vs. als Voraussetzung?). Nur Befunde der ersten Kategorie werden an
+die Reviewer/Synthese weitergegeben. Die Faktenliste markiert jeden Eintrag
+entsprechend (`fehlt-fälschlich` / `wird-erstellt` / `abweichend`).
 
 ### Schritt 3a — Spec-Review: Author↔Reviewer-Dialog (cheap-reviewer, Sonnet)
 Der Subagent simuliert den Dialog (Format aus `review.md`):
@@ -202,8 +237,16 @@ Stufe 6):
   (spielt den „Author" aus `review.md`: verteidigt die bestehende Entscheidung,
   prüft Tradeoffs), bevor er angewendet wird — damit kein schwacher Einwand blind
   übernommen wird.
+- **Snapshot vor dem ersten Fix (zwingend):** Ist das Dokument in einem Git-Repo
+  und uncommittet, wird es zuerst committet (sauberer Wiederherstellungspunkt);
+  andernfalls nach `<datei>.preflight.bak` kopiert. Erst danach werden Fixes
+  angewendet. So bleibt „alles fixen" mit einem garantierten Rückweg.
 - **Alle behebbaren Befunde werden direkt im Dokument angewendet** — bei
-  umfangreichen mechanischen Edits via `cheap-coder`, sonst direkt.
+  umfangreichen mechanischen Edits via `cheap-coder`, sonst direkt. (Diese Edits
+  laufen unter aktivem `.preflight-running`-Lock, siehe Hook-Abschnitt.)
+- **Nach dem Anwenden wird dem Nutzer der Diff gezeigt** (nicht nur eine
+  Fix-Liste), gegen den Snapshot — so siehst du genau, was sich an deinem
+  Dokument geändert hat, und kannst per Snapshot zurück.
 - **Design-Gabelungen** (Befunde, deren Behebung eine echte Designentscheidung
   ohne objektiv richtige Antwort verlangt) werden *nicht* geraten, sondern dem
   Nutzer als kurze Entscheidungsliste vorgelegt (eine Frage je Gabelung).
@@ -220,11 +263,12 @@ erneut geprüft wird:
   Tippfehler) angewendet wurden.
 Die Entscheidung wird dem Nutzer mit einer Ein-Satz-Begründung mitgeteilt.
 
-### Schritt 6 — State aktualisieren & berichten
-- Schreibt den finalen Datei-Hash in `.claude/.preflight-reviewed`.
+### Schritt 6 — Lock lösen, State aktualisieren & berichten
+- Entfernt den `.preflight-running`-Lock, **dann** schreibt es den finalen
+  Datei-Hash in `.claude/.preflight-reviewed` (Reihenfolge laut Lock-Protokoll).
 - Gibt dem Nutzer ein kompaktes Urteil: Summary-Tabelle (Topic/Stufe, Runden,
-  Action Items), Liste der angewendeten Fixes, offene Design-Gabelungen,
-  Re-Review-Entscheidung und (Plan) das Go/No-Go.
+  Action Items), den **Diff der angewendeten Fixes** (gegen den Snapshot), offene
+  Design-Gabelungen, Re-Review-Entscheidung und (Plan) das Go/No-Go.
 
 ## Baustein 3: Commands (manueller Einstieg)
 
@@ -271,6 +315,15 @@ Beide sind dünne Wrapper, die nur den Skill mit den richtigen Argumenten aufruf
 ## Offene Punkte
 
 Keine — Entscheidungen sind getroffen (Name `preflight`; zwei Gates; Hook nudged
-nicht-blockierend; Spec=Dialog, Plan=6-stufige Chain; Plan↔Spec=Verweis-bevorzugt-
-sonst-Heuristik; alle Fixes anwenden; adversarielle Consolidation; adaptive
-Re-Review; manuelle Commands `/preflight-spec` + `/preflight-plan`).
+nicht-blockierend **als advisory nudge, kein hartes Gate**; Spec=Dialog,
+Plan=6-stufige Chain; Plan↔Spec=Verweis-bevorzugt-sonst-Heuristik; alle Fixes
+anwenden **mit Snapshot + Diff davor/danach**; **Realismus-Befunde
+pflicht-klassifiziert** (fehlt-fälschlich vs. wird-erstellt); **In-Progress-Lock**
+gegen review-eigene Hook-Trigger; adversarielle Consolidation; adaptive Re-Review;
+manuelle Commands `/preflight-spec` + `/preflight-plan`).
+
+### Bewusst nicht adressiert (aus devils-advocate-Review, akzeptierte Tradeoffs)
+- **Kein Pass/Fail-Verdict im Spec-Modus** (nur Plan-Modus hat Go/No-Go) — Medium,
+  bewusst offengelassen.
+- **Volle Chain läuft bei jeder echten Dokument-Iteration erneut** (Hash-Debounce
+  fängt nur identische Wiederholungen) — bewusst akzeptierte Kosten/Latenz.
