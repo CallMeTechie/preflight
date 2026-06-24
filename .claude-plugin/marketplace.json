@@ -1,5 +1,6 @@
 {
   "name": "preflight",
+  "description": "Automated preflight review of superpowers spec and plan documents for Claude Code.",
   "owner": {
     "name": "CallMeTechie",
     "url": "https://github.com/CallMeTechie"
