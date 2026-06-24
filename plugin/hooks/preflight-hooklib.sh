@@ -45,8 +45,30 @@ preflight_already_reviewed() {
 	grep -qFx -- "$line" "$state" 2>/dev/null
 }
 
+# Record <hash> for <path> in the state file, atomically replacing any
+# previous entry for the same path (prevents unbounded growth + stale hashes).
+preflight_record_reviewed() {
+	local state="$1" path="$2" hash="$3" tmp
+	tmp="$(mktemp)" || return 1
+	if [ -f "$state" ]; then
+		awk -F'\t' -v p="$path" '$2 != p' "$state" > "$tmp"
+	fi
+	printf '%s\t%s\n' "$hash" "$path" >> "$tmp"
+	mv -- "$tmp" "$state"
+}
+
+# Return 0 if the path is safe (contains no control characters). Control
+# chars in a path can split grep -F patterns and corrupt the state file.
+preflight_path_ok() {
+	case "$1" in
+		*[[:cntrl:]]*) return 1 ;;
+		*) return 0 ;;
+	esac
+}
+
 # Return 0 if a non-stale lock exists. Stale threshold default 1800s.
 # Lock content is a unix timestamp; garbage or too-old -> not locked.
+# A future timestamp (clock jump) is treated as locked, not unlocked.
 preflight_is_locked() {
 	local lock="$1" threshold="${2:-1800}" now ts age
 	[ -f "$lock" ] || return 1
@@ -54,5 +76,5 @@ preflight_is_locked() {
 	ts="$(cat -- "$lock" 2>/dev/null)"
 	case "$ts" in ''|*[!0-9]*) return 1 ;; esac
 	age=$(( now - ts ))
-	[ "$age" -ge 0 ] && [ "$age" -lt "$threshold" ]
+	[ "$age" -lt "$threshold" ]
 }

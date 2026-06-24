@@ -12,7 +12,7 @@ plan="$tmp/proj/docs/superpowers/plans/2026-06-24-foo.md"; printf 'content' > "$
 run() { printf '{"tool_input":{"file_path":"%s"},"cwd":"%s"}' "$1" "$tmp/proj" | bash "$HOOK"; }
 
 out="$(run "$plan")"
-printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | test("Modus=plan")' >/dev/null && ok "plan write -> nudge plan" || bad "no plan nudge"
+printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | test("mode=plan")' >/dev/null && ok "plan write -> nudge plan" || bad "no plan nudge"
 
 out="$(run "$tmp/proj/src/main.rs")"
 [ -z "$out" ] && ok "foreign path -> no output" || bad "foreign path produced output"
@@ -27,5 +27,11 @@ out="$(run "$plan")"
 rm -f "$tmp/proj/.claude/.preflight-reviewed"; date +%s > "$tmp/proj/.claude/.preflight-running"
 out="$(run "$plan")"
 [ -z "$out" ] && ok "lock active -> no nudge" || bad "lock not honored"
+
+# Control-char gate: newline in path must produce no output.
+rm -f "$tmp/proj/.claude/.preflight-running"
+out="$(printf '{"tool_input":{"file_path":"%s"},"cwd":"%s"}' "$plan"$'\n'"X" "$tmp/proj" | bash "$HOOK")"
+[ -z "$out" ] && ok "newline path -> no output" || bad "newline path produced output"
+
 rm -rf "$tmp"
 exit $fail

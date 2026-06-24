@@ -27,5 +27,23 @@ printf 'garbage' > "$lock"
 preflight_is_locked "$lock" && bad "garbage lock locked" || ok "garbage lock -> unlocked"
 printf '%s\t%s\n' "$h" "${f}2" > "$state"
 preflight_already_reviewed "$state" "$f" "$h" && bad "prefix path falsely matched" || ok "prefix path -> not reviewed"
+
+# preflight_record_reviewed: second call for same path replaces first entry
+state2="$tmp/.preflight-reviewed2"
+preflight_record_reviewed "$state2" "$f" "hash1"
+preflight_record_reviewed "$state2" "$f" "hash2"
+lines="$(grep -c '' "$state2" 2>/dev/null || echo 0)"
+[ "$lines" -eq 1 ] && ok "record_reviewed: one entry per path" || bad "record_reviewed: expected 1 line, got $lines"
+grep -qF "hash2" "$state2" && ok "record_reviewed: latest hash present" || bad "record_reviewed: latest hash missing"
+grep -qF "hash1" "$state2" && bad "record_reviewed: old hash still present" || ok "record_reviewed: old hash replaced"
+
+# preflight_path_ok: control chars rejected; clean paths accepted
+preflight_path_ok "$tmp/x"$'\n'"y" && bad "path_ok: newline path accepted" || ok "path_ok: newline path rejected"
+preflight_path_ok "$tmp/clean.md" && ok "path_ok: clean path accepted" || bad "path_ok: clean path rejected"
+
+# preflight_is_locked: future timestamp must be treated as locked (clock jump)
+echo $(( $(date +%s) + 600 )) > "$lock"
+preflight_is_locked "$lock" && ok "future timestamp -> locked" || bad "future timestamp not treated as locked"
+
 rm -rf "$tmp"
 exit $fail
