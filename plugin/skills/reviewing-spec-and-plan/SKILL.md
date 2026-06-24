@@ -5,66 +5,97 @@ description: Use to run a deep preflight review of a superpowers spec or plan do
 
 # Reviewing Spec and Plan (preflight)
 
-**Eingang:** `Modus` (`spec` | `plan`) + `Pfad` zur Datei. Quelle: Hook-Reminder
-oder Command-Argument. Referenz-Prompts liegen unter `references/` neben dieser Datei.
+**Input:** `mode` (`spec` | `plan`) + `path` to the file. Source: hook reminder
+or command argument. Reference prompts are located under `references/` next to this file.
 
-**Tiering (verbindlich):** Reviewer-Arbeit an `cheap-reviewer`, Codebase-Faktencheck
-an `cheap-explorer`, umfangreiche mechanische Fix-Edits an `cheap-coder`; der
-Hauptloop macht nur Consolidation/Urteil/Fix-Entscheidung.
+**Tiering (mandatory):** Delegate reviewer work to `cheap-reviewer`, codebase
+fact-checking to `cheap-explorer`, large mechanical fix-edits to `cheap-coder`;
+the main loop handles only consolidation, judgment, and fix decisions.
 
-## Schritt 1 — Kontext laden
-- Lies die Datei unter `Pfad`. Ist sie leer oder < ~15 Zeilen substanziell:
-  melde "zu wenig Inhalt fuer Review" und brich ab.
-- **Plan-Modus:** finde die zugehoerige Spec. (1) Gibt es im Plan eine Zeile
-  `Spec: <pfad>`, gilt der. (2) Sonst Heuristik ueber gleiches Datum/Topic im
-  Dateinamen unter `docs/superpowers/specs/`; bei Mehrdeutigkeit frage den Nutzer.
-  Findest du keine Spec, laeuft der Review ohne die Konsistenz-Dimension (sag es).
+## Step 1 — Load context
+- Read the file at `path`. If it is empty or has fewer than ~15 substantive lines:
+  report "too little content for review" and abort.
+- **Plan mode:** locate the associated spec. (1) If the plan contains a line
+  `Spec: <path>`, use that. (2) Otherwise apply a heuristic: search both
+  `docs/superpowers/specs/` **and** the plan file's own directory; match on
+  filename (date/topic) **or** document heading/topic; ask the user if
+  ambiguous. If no spec is found, proceed without the consistency dimension
+  (state this explicitly).
 
-## Schritt 2 — Lock setzen
-Lege `<project>/.claude/.preflight-running` mit aktuellem Unix-Timestamp an
-(`date +%s`). Reihenfolge ist kritisch: **Lock zuerst**, dann editieren, am Ende
-Lock entfernen, dann State schreiben (Schritt 7). Der Lock unterdrueckt die
-review-eigenen Edits am Dokument im Hook.
+## Step 2 — Set lock
+Write the current Unix timestamp into `<project>/.claude/.preflight-running`
+(`date +%s`). If creating the lock fails (exit != 0), **abort immediately and
+report the error — never proceed without the lock.** Order is critical:
+**lock first**, then edit, remove lock at the end, then write state (Step 7).
+The lock suppresses review-own edits to the document in the hook.
 
-## Schritt 3 — Faktencheck
-Dispatch einen `cheap-explorer` mit dem Prompt aus `references/factcheck.md` plus
-dem Dokumentinhalt. Nimm nur Befunde `fehlt-faelschlich`/`abweichend` in den Review.
+## Step 3 — Fact-check
+Dispatch a `cheap-explorer` with the prompt from `references/factcheck.md` plus
+the document content. Only carry findings of type `missing` /
+`deviating` into the review.
 
-## Schritt 4 — Review
-- **Spec-Modus:** Dispatch EINEN `cheap-reviewer` mit `references/spec-dialogue.md`
-  (Dokument + Faktenliste + Max-Runden).
-- **Plan-Modus:** Dispatch FUENF `cheap-reviewer` PARALLEL, je ein Mandat aus
-  `references/plan-chain.md` (Stufen 1–5), jeweils mit Plan + Spec + Faktenliste;
-  Stufe 6 (Consolidator) ist Schritt 5.
+## Step 4 — Review
+- **Spec mode:** Dispatch ONE `cheap-reviewer` with `references/spec-dialogue.md`
+  (document + fact list + max-rounds).
+- **Plan mode:** The main loop builds FIVE SEPARATE dispatches to `cheap-reviewer`
+  and runs them in PARALLEL. Each dispatch assigns EXACTLY ONE stage explicitly —
+  for example: "You are Reviewer N. Your mandate is exclusively Stage N: <title>
+  from references/plan-chain.md". Do NOT pass the full plan-chain.md text
+  verbatim to all five; instead quote only the relevant stage mandate per dispatch.
+  Each reviewer receives: plan + spec + fact list + its single stage mandate.
+  Stage 6 (Consolidator) is NOT delegated — it is Step 5 of this skill.
 
-## Schritt 5 — Consolidation, Snapshot, Fixes, Diff (Hauptloop) (= Stufe 6 der Plan-Chain: Consolidator)
-1. Merge/dedupliziere die Findings; validiere jeden Befund adversariell, bevor du
-   ihn anwendest (kein schwacher Einwand wird blind uebernommen).
-2. **Snapshot vor dem ersten Fix:** ist die Datei in einem Git-Repo und uncommittet,
-   committe sie; sonst kopiere nach `<datei>.preflight.bak`.
-3. Wende ALLE behebbaren Befunde direkt am Dokument an (grosse mechanische Edits via
-   `cheap-coder`). Echte `design_forks` NICHT raten — sammle sie fuer Schritt 7.
-4. Zeige dem Nutzer den **Diff** gegen den Snapshot (nicht nur eine Fix-Liste).
-5. **Plan-Modus:** formuliere ein explizites **Go/No-Go** mit Begruendung.
+## Step 5 — Consolidation, Snapshot, Fixes, Diff (main loop) (= Stage 6 of the plan chain: Consolidator)
+1. Merge and deduplicate findings; validate each finding adversarially before
+   applying it (no weak objection is adopted blindly).
+2. **Snapshot before the first fix:** if the file lives in a Git repository and is
+   uncommitted, stage and commit only the target file:
+   ```
+   git add -- "<path>"
+   git commit -m "preflight: snapshot <basename> before review"
+   ```
+   Before running the above, check whether unrelated changes are already staged:
+   if `git diff --cached --name-only` lists anything other than `<path>`, do NOT
+   commit — use the `.bak` method instead: `cp -- "<path>" "<path>.preflight.bak"`.
+   If the file is not in a Git repository, always use the `.bak` method.
+3. Apply ALL fixable findings directly to the document (large mechanical edits via
+   `cheap-coder`). Do NOT guess on genuine `design_forks` — collect them for Step 7.
+4. Show the user the **diff** against the snapshot (not just a fix list).
+5. **Plan mode:** formulate an explicit **Go/No-Go** with reasoning.
 
-## Schritt 6 — Adaptive Re-Review
-Waege ab, ob erneut geprueft wird — und teile die Entscheidung mit Ein-Satz-
-Begruendung mit:
-- **Fokussierte Runde** (nur geaenderte Abschnitte/Dimensionen) bei lokalen Fixes.
-- **Volle Runde** (Dialog bzw. komplette Chain) bei strukturellen/breiten Aenderungen.
-- **Kein zweiter Durchgang** bei nur trivialen Korrekturen.
-Bei einer Re-Review bleibt der Lock aktiv und es gilt erneut Schritt 4–5.
+## Step 6 — Adaptive re-review
+Weigh whether a second pass is warranted and state the decision with a one-sentence
+reason:
+- **Focused round** (only changed sections/dimensions) for local fixes.
+- **Full round** (dialogue or full chain) for structural or broad changes.
+- **No second pass** for trivial corrections only.
 
-## Schritt 7 — Lock loesen, State, Bericht
-- Entferne `.preflight-running`, **dann** schreibe `<hash>\t<pfad>` (finaler
-  SHA-256 der Datei) nach `.claude/.preflight-reviewed` (vorhandene Zeile fuer den
-  Pfad ersetzen).
-- Lege offene `design_forks` dem Nutzer als kurze Entscheidungsliste vor (eine
-  Frage je Gabelung).
-- Berichte kompakt: Summary-Tabelle, Diff-Hinweis, offene Gabelungen, Re-Review-
-  Entscheidung und (Plan) das Go/No-Go.
+**Hard cap:** at most ONE re-review round. After the second pass through Steps 4–5
+the answer is always "no further round", regardless of how broad the changes were.
 
-## Fehlerpfade
-- Brichst du vorzeitig ab, entferne den Lock trotzdem (sonst schweigt der Hook bis
-  zur 30-min-Staleness).
-- Fehlt `.claude/`, lege es an.
+If a re-review round starts, **refresh the lock timestamp first**:
+`date +%s > <project>/.claude/.preflight-running`. This prevents the 1800 s staleness
+threshold from expiring in the middle of a long re-review.
+
+During re-review the lock remains active and Steps 4–5 apply again.
+
+## Step 7 — Release lock, write state, report
+- Remove `.preflight-running`, **then** write the reviewed state.
+- Before writing: verify that `path` contains no control characters by calling
+  `preflight_path_ok "<path>"`. If it returns non-zero, abort without writing the
+  state (a corrupt state line would break the hook).
+- Write the state using the shell function from `plugin/hooks/preflight-hooklib.sh`:
+  ```
+  preflight_record_reviewed "<state_file>" "<path>" "<hash>"
+  ```
+  (`<state_file>` = `<project>/.claude/.preflight-reviewed`). This atomically
+  replaces the existing line for the same path and prevents unbounded growth.
+- Present open `design_forks` to the user as a short decision list (one question
+  per fork).
+- Report compactly: summary table, diff reference, open forks, re-review decision,
+  and (plan mode) the Go/No-Go.
+
+## Error paths
+- If you abort early, remove the lock anyway (otherwise the hook stays silent until
+  the 30-minute staleness expires).
+- If `.claude/` does not exist, create it.

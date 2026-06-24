@@ -1,16 +1,18 @@
 ---
 description: Run a preflight review (6-stage review chain) on a superpowers plan against its spec, apply all fixable findings with a snapshot+diff, and give a Go/No-Go.
-argument-hint: [path] [max-rounds (default 5)]
+argument-hint: [path]
 ---
 
 # Preflight: Plan
 
-Invoke die Skill `reviewing-spec-and-plan` im **Plan-Modus**.
+Invoke the skill `reviewing-spec-and-plan` in **Plan mode**.
 
-Argumente: `$ARGUMENTS` = optionaler `[path] [max-rounds]`.
-- Ohne `path`: nimm die juengste Datei in `docs/superpowers/plans/`.
-- Loese die zugehoerige Spec auf: `Spec:`-Zeile bevorzugt, sonst Datum/Topic-
-  Heuristik (bei Mehrdeutigkeit nachfragen).
-- `max-rounds` default 5.
+Arguments: `$ARGUMENTS` = optional `[path]`.
+- Without `path`: pick the most recent file in `docs/superpowers/plans/`.
+- Resolve the associated spec: prefer a `Spec:` line in the plan, otherwise use a
+  date/topic heuristic (ask if ambiguous).
 
-Fuehre die Skill genau nach ihrer Schrittfolge aus und gib am Ende das Go/No-Go aus.
+The plan chain has fixed stages (no rounds); the adaptive re-review is capped at
+1 round maximum.
+
+Execute the skill exactly following its step sequence and output the Go/No-Go at the end.

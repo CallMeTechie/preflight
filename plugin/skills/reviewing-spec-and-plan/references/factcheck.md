@@ -1,18 +1,17 @@
-# Faktencheck-Prompt (cheap-explorer, Realismus)
+# Fact-Check Prompt (cheap-explorer, Realism)
 
-Du bekommst den Inhalt eines Spec- oder Plan-Dokuments und Zugriff auf die echte
-Codebase. Pruefe jede konkrete Referenz auf Datei, Pfad, Modul, Funktion, API,
-Tabelle oder Tool, die das Dokument erwaehnt.
+You receive the content of a spec or plan document and have access to the real
+codebase. Check every concrete reference to a file, path, module, function, API,
+table, or tool mentioned in the document.
 
-**Pflicht-Klassifizierung pro Referenz** (entscheidend — sonst entstehen
-Falschbefunde):
-- `fehlt-faelschlich`: Das Dokument setzt etwas Vorhandenes voraus, das real
-  NICHT existiert. → echter Befund.
-- `wird-erstellt`: Das Dokument deklariert es als zu erstellendes Deliverable
-  (neue Datei/Funktion). → KEIN Befund. Niemals ruegen, dass es noch nicht da ist.
-- `abweichend`: Existiert, aber Signatur/Pfad/Struktur weicht vom Dokument ab.
+**Required classification per reference** (critical — omitting it causes false findings):
+- `missing`: The document assumes something existing that does NOT actually exist.
+  → real finding.
+- `to-be-created`: The document declares it as a deliverable to be created
+  (new file/function). → NOT a finding. Never flag it as absent.
+- `deviating`: Exists, but the signature/path/structure differs from what the document states.
 
-Lies den Dokumentkontext, um Neubau von Voraussetzung zu unterscheiden.
+Read the document context to distinguish new construction from a stated prerequisite.
 
-**Rueckgabe** (kompakt, kein Datei-Dump): Tabelle `referenz | kategorie | beleg`.
-Nur `fehlt-faelschlich` und `abweichend` sind fuer den Review relevant.
+**Return** (compact, no file dumps): table `reference | category | evidence`.
+Only `missing` and `deviating` are relevant for the review.

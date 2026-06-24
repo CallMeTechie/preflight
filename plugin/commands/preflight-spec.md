@@ -5,12 +5,12 @@ argument-hint: [path] [max-rounds (default 5)]
 
 # Preflight: Spec
 
-Invoke die Skill `reviewing-spec-and-plan` im **Spec-Modus**.
+Invoke the skill `reviewing-spec-and-plan` in **Spec mode**.
 
-Argumente: `$ARGUMENTS` = optionaler `[path] [max-rounds]`.
-- Ohne `path`: nimm die juengste Datei in `docs/superpowers/specs/` (nach Datum im
-  Dateinamen, dann mtime).
+Arguments: `$ARGUMENTS` = optional `[path] [max-rounds]`.
+- Without `path`: pick the most recent file in `docs/superpowers/specs/` (by date in
+  filename, then mtime).
 - `max-rounds` default 5.
 
-Fuehre die Skill genau nach ihrer Schrittfolge aus (Lock -> Faktencheck -> Dialog ->
-Snapshot+Fixes+Diff -> adaptive Re-Review -> Lock loesen/State/Bericht).
+Execute the skill exactly following its step sequence (Lock → Fact-check → Dialogue →
+Snapshot+Fixes+Diff → Adaptive re-review → Release lock/State/Report).

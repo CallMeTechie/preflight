@@ -1,9 +1,4 @@
-# Sample Plan: Notification Service — Implementation Plan (Demo-Fixture)
-
-> **Note:** This file is a demo fixture with intentional defects for manual
-> integration tests of the preflight plugin. Not a real project.
-
-Spec: tests/fixtures/sample-spec-design.md
+# Sample Plan: Notification Service — Implementation Plan
 
 ## Goal
 
