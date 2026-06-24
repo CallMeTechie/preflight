@@ -1,9 +1,4 @@
-# Sample Plan: Notification Service — Implementation Plan (Demo-Fixture)
-
-> **Note:** This file is a demo fixture for testing the heuristic spec-lookup
-> path of the preflight plugin. The `Spec:` reference line is intentionally
-> absent so that the skill must resolve the associated spec via date/topic
-> heuristic rather than an explicit pointer. Not a real project.
+# Sample Plan: Notification Service — Implementation Plan
 
 ## Goal
 
