@@ -49,9 +49,9 @@ preflight_already_reviewed() {
 # previous entry for the same path (prevents unbounded growth + stale hashes).
 preflight_record_reviewed() {
 	local state="$1" path="$2" hash="$3" tmp
-	tmp="$(mktemp)" || return 1
+	tmp="$(mktemp "$(dirname -- "$state")/.preflight-tmp.XXXXXX")" || return 1
 	if [ -f "$state" ]; then
-		awk -F'\t' -v p="$path" '$2 != p' "$state" > "$tmp"
+		_PREFLIGHT_PATH="$path" awk -F'\t' '$2 != ENVIRON["_PREFLIGHT_PATH"]' "$state" > "$tmp"
 	fi
 	printf '%s\t%s\n' "$hash" "$path" >> "$tmp"
 	mv -- "$tmp" "$state"

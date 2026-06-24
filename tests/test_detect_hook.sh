@@ -28,10 +28,11 @@ rm -f "$tmp/proj/.claude/.preflight-reviewed"; date +%s > "$tmp/proj/.claude/.pr
 out="$(run "$plan")"
 [ -z "$out" ] && ok "lock active -> no nudge" || bad "lock not honored"
 
-# Control-char gate: newline in path must produce no output.
+# Control-char gate: newline embedded in a well-formed JSON path must fire the gate.
 rm -f "$tmp/proj/.claude/.preflight-running"
-out="$(printf '{"tool_input":{"file_path":"%s"},"cwd":"%s"}' "$plan"$'\n'"X" "$tmp/proj" | bash "$HOOK")"
-[ -z "$out" ] && ok "newline path -> no output" || bad "newline path produced output"
+bad_json="$(jq -n --arg fp "$plan"$'\n'"X" --arg cwd "$tmp/proj" '{"tool_input":{"file_path":$fp},"cwd":$cwd}')"
+out="$(printf '%s' "$bad_json" | bash "$HOOK")"
+[ -z "$out" ] && ok "newline in well-formed JSON -> gate fires, no output" || bad "newline in well-formed JSON: gate did not fire"
 
 rm -rf "$tmp"
 exit $fail

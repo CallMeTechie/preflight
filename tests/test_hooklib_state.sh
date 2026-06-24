@@ -45,5 +45,15 @@ preflight_path_ok "$tmp/clean.md" && ok "path_ok: clean path accepted" || bad "p
 echo $(( $(date +%s) + 600 )) > "$lock"
 preflight_is_locked "$lock" && ok "future timestamp -> locked" || bad "future timestamp not treated as locked"
 
+# preflight_record_reviewed: path with literal backslash must deduplicate (ENVIRON guard, not awk -v)
+state3="$tmp/.preflight-reviewed3"
+bp="$tmp/a\\b.md"
+preflight_record_reviewed "$state3" "$bp" "hashA"
+preflight_record_reviewed "$state3" "$bp" "hashB"
+lines_bp="$(grep -c '' "$state3" 2>/dev/null || echo 0)"
+[ "$lines_bp" -eq 1 ] && ok "record_reviewed: backslash path -> one entry" || bad "record_reviewed: backslash path -> expected 1 line, got $lines_bp"
+grep -qF "hashB" "$state3" && ok "record_reviewed: backslash path -> latest hash present" || bad "record_reviewed: backslash path -> latest hash missing"
+grep -qF "hashA" "$state3" && bad "record_reviewed: backslash path -> old hash still present" || ok "record_reviewed: backslash path -> old hash replaced"
+
 rm -rf "$tmp"
 exit $fail
