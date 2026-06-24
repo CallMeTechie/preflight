@@ -1,35 +1,35 @@
 # Sample Spec: Notification Service (Demo-Fixture)
 
-> **Hinweis:** Diese Datei ist ein Demo-Fixture mit absichtlichen Mängeln für
-> manuelle Integrations-Tests des preflight-Plugins. Kein echtes Projekt.
+> **Note:** This file is a demo fixture with intentional defects for manual
+> integration tests of the preflight plugin. Not a real project.
 
-## Kontext
+## Context
 
-Der Notification-Service sendet E-Mail- und Push-Benachrichtigungen an Nutzer,
-wenn ein Ereignis im System ausgelöst wird.
+The Notification Service sends email and push notifications to users when an
+event is triggered in the system.
 
-## Anforderungen
+## Requirements
 
-1. Der Service MUSS Ereignisse über eine Message-Queue (RabbitMQ) empfangen.
-2. Jede Benachrichtigung MUSS innerhalb von 5 Sekunden zugestellt werden.
-3. Bei Zustellungsfehlern MUSS der Service es maximal 3-mal erneut versuchen.
-4. TODO: Klären wie das Retry-Backoff-Intervall berechnet wird.
-5. Der Service MUSS E-Mail und Push gleichzeitig (parallel) unterstützen.
-6. Im Fehlerfall MUSS eine Benachrichtigung in die Dead-Letter-Queue verschoben
-   werden und der Service MUSS sofort stoppen und keine weiteren Nachrichten
-   verarbeiten, bis der Fehler manuell behoben wurde.
-7. Das Konfigurationsformat ist YAML; der zugehörige Umsetzungsplan liegt unter
+1. The service MUST receive events via a message queue (RabbitMQ).
+2. Each notification MUST be delivered within 5 seconds.
+3. On delivery failure the service MUST retry up to 3 times.
+4. TODO: Clarify how the retry backoff interval is calculated.
+5. The service MUST support email and push simultaneously (in parallel).
+6. On failure a notification MUST be moved to the dead-letter queue and the
+   service MUST stop immediately and not process any further messages until the
+   failure has been resolved manually.
+7. The configuration format is YAML; the corresponding implementation plan is at
    `tests/fixtures/plan-sample.md`.
 
-## Technische Einschränkungen
+## Technical Constraints
 
-- Sprache: Go 1.22
-- Datenbank: PostgreSQL 15 für Zustellungsprotokolle
-- Deployment: Docker, kein Kubernetes
+- Language: Go 1.22
+- Database: PostgreSQL 15 for delivery logs
+- Deployment: Docker, no Kubernetes
 
-## Nicht im Scope
+## Out of Scope
 
-- SMS-Benachrichtigungen
-- Read-Receipt-Tracking
+- SMS notifications
+- Read-receipt tracking
 
 ---
