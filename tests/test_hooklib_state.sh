@@ -25,5 +25,7 @@ echo $(( $(date +%s) - 99999 )) > "$lock"
 preflight_is_locked "$lock" && bad "stale lock still locked" || ok "stale lock -> unlocked (fail-open)"
 printf 'garbage' > "$lock"
 preflight_is_locked "$lock" && bad "garbage lock locked" || ok "garbage lock -> unlocked"
+printf '%s\t%s\n' "$h" "${f}2" > "$state"
+preflight_already_reviewed "$state" "$f" "$h" && bad "prefix path falsely matched" || ok "prefix path -> not reviewed"
 rm -rf "$tmp"
 exit $fail

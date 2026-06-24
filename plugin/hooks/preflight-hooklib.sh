@@ -42,7 +42,7 @@ preflight_already_reviewed() {
 	[ -n "$hash" ] || return 1
 	[ -f "$state" ] || return 1
 	line="$(printf '%s\t%s' "$hash" "$path")"
-	grep -qF -- "$line" "$state" 2>/dev/null
+	grep -qFx -- "$line" "$state" 2>/dev/null
 }
 
 # Return 0 if a non-stale lock exists. Stale threshold default 1800s.
