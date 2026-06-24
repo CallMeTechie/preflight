@@ -65,5 +65,22 @@ rc_bad=$?
 lines_after="$(grep -c '' "$state4" 2>/dev/null || echo 0)"
 [ "$lines_after" -eq "$lines_before" ] && ok "record_reviewed: control-char path -> no line written" || bad "record_reviewed: control-char path -> line count changed from $lines_before to $lines_after"
 
+# preflight_canon_path: resolves ..; strips trailing slash
+got="$(preflight_canon_path "/a/b/../c")"
+[ "$got" = "/a/c" ] && ok "canon_path: resolves .." || bad "canon_path: expected /a/c, got $got"
+got="$(preflight_canon_path "/a/b/")"
+[ "$got" = "/a/b" ] && ok "canon_path: strips trailing slash" || bad "canon_path: expected /a/b, got $got"
+
+# Debounce form-independence: record with non-canonical path, lookup with canonical -> match
+state5="$tmp/.preflight-reviewed5"
+mkdir -p "$tmp/sub"
+preflight_record_reviewed "$state5" "$tmp/sub/../doc.md" "hashC"
+preflight_already_reviewed "$state5" "$tmp/doc.md" "hashC" && ok "debounce: non-canonical record -> canonical lookup -> match" || bad "debounce: non-canonical record -> canonical lookup -> no match"
+
+# And reverse: record canonical, lookup with /./ variant -> match
+state6="$tmp/.preflight-reviewed6"
+preflight_record_reviewed "$state6" "$tmp/doc.md" "hashD"
+preflight_already_reviewed "$state6" "$tmp/./doc.md" "hashD" && ok "debounce: canonical record -> /./ lookup -> match" || bad "debounce: canonical record -> /./ lookup -> no match"
+
 rm -rf "$tmp"
 exit $fail

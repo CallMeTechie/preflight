@@ -39,6 +39,7 @@ preflight_hash() {
 # Empty hash -> return 1 (fail-open: treat as not reviewed, so we nudge).
 preflight_already_reviewed() {
 	local state="$1" path="$2" hash="$3" line
+	path="$(preflight_canon_path "$path")"
 	[ -n "$hash" ] || return 1
 	[ -f "$state" ] || return 1
 	line="$(printf '%s\t%s' "$hash" "$path")"
@@ -50,6 +51,7 @@ preflight_already_reviewed() {
 preflight_record_reviewed() {
 	local state="$1" path="$2" hash="$3" tmp
 	preflight_path_ok "$path" || return 1
+	path="$(preflight_canon_path "$path")"
 	tmp="$(mktemp "$(dirname -- "$state")/.preflight-tmp.XXXXXX")" || return 1
 	if [ -f "$state" ]; then
 		_PREFLIGHT_PATH="$path" awk -F'\t' '$2 != ENVIRON["_PREFLIGHT_PATH"]' "$state" > "$tmp"
@@ -65,6 +67,13 @@ preflight_path_ok() {
 		*[[:cntrl:]]*) return 1 ;;
 		*) return 0 ;;
 	esac
+}
+
+# Canonicalize a path to a normalized absolute form (resolves ./, ../, trailing
+# slash, and existing symlinks; does not require the path to exist). Falls back
+# to the original string if realpath is unavailable.
+preflight_canon_path() {
+	realpath -m -- "$1" 2>/dev/null || printf '%s' "$1"
 }
 
 # Return 0 if a non-stale lock exists. Stale threshold default 1800s.

@@ -90,6 +90,9 @@ During re-review the lock remains active and Steps 4–5 apply again.
   ```
   (`<state_file>` = `<project>/.claude/.preflight-reviewed`). This atomically
   replaces the existing line for the same path and prevents unbounded growth.
+  Always pass the **absolute** path from the nudge (`path=…`), never a relative
+  path. `preflight_record_reviewed` canonicalizes the path internally, so
+  equivalent forms (e.g. `/a/./b.md` vs `/a/b.md`) are correctly debounced.
 - Present open `design_forks` to the user as a short decision list (one question
   per fork).
 - Report compactly: summary table, diff reference, open forks, re-review decision,

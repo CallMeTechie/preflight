@@ -34,5 +34,13 @@ bad_json="$(jq -n --arg fp "$plan"$'\n'"X" --arg cwd "$tmp/proj" '{"tool_input":
 out="$(printf '%s' "$bad_json" | bash "$HOOK")"
 [ -z "$out" ] && ok "newline in well-formed JSON -> gate fires, no output" || bad "newline in well-formed JSON: gate did not fire"
 
+# Debounce is path-form-independent: state written for canonical path,
+# hook called with /./ variant -> no nudge.
+h_plan="$(if command -v sha256sum >/dev/null 2>&1; then sha256sum "$plan"|cut -d' ' -f1; else shasum -a256 "$plan"|cut -d' ' -f1; fi)"
+printf '%s\t%s\n' "$h_plan" "$plan" > "$tmp/proj/.claude/.preflight-reviewed"
+plan_dotslash="$(dirname "$plan")/./$(basename "$plan")"
+out="$(run "$plan_dotslash")"
+[ -z "$out" ] && ok "debounce: canonical state + /./ path -> no nudge" || bad "debounce: canonical state + /./ path -> nudge fired"
+
 rm -rf "$tmp"
 exit $fail
