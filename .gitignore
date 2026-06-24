@@ -1,0 +1,7 @@
+# Subagent-driven-development scratch (briefs, reports, diffs, ledger)
+.superpowers/
+
+# preflight runtime state (created when preflight runs in any project, incl. dogfooding here)
+.claude/.preflight-running
+.claude/.preflight-reviewed
+*.preflight.bak

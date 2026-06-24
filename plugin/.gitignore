@@ -1,0 +1,4 @@
+# preflight runtime state (per consuming project, never in this repo)
+.claude/.preflight-running
+.claude/.preflight-reviewed
+*.preflight.bak

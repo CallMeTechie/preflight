@@ -1,0 +1,17 @@
+{
+	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Write|Edit",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "${CLAUDE_PLUGIN_ROOT}/hooks/detect-spec-plan-write.sh",
+						"timeout": 10,
+						"description": "Nudge preflight review when a spec/plan doc is written"
+					}
+				]
+			}
+		]
+	}
+}

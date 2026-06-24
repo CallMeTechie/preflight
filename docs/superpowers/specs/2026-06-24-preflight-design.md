@@ -2,7 +2,7 @@
 
 - **Datum:** 2026-06-24
 - **Status:** Entwurf zur Review
-- **Autor:** Marc Backes (CallMeTechie) / Claude
+- **Autor:** Marc Backes (CallMeTechie)
 
 ## Problem
 
