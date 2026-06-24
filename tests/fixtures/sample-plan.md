@@ -26,8 +26,8 @@ Implementierung des Notification-Service gemäss der zugehörigen Spec.
 
 ### Phase 3 — Tests + Deployment (Tasks 6–7)
 
-- **Task 6:** unit_tests anlegen — Dateiname `internal/consumer/consumer_test.go` (NEU,
-  darf vom Realismus-Check nicht als fehlend gerügt werden).
+- **Task 6:** Lege neu an: `internal/consumer/consumer_test.go` — Unit-Tests für
+  den Queue-Consumer.
 - **Task 7:** Docker-Image bauen und in CI deployen.
 
 ## Konventionen
@@ -46,7 +46,7 @@ Implementierung des Notification-Service gemäss der zugehörigen Spec.
          aber die Konventionen verlangen konfigurierbare Parameter; ausserdem
          heisst die Datei `handler.go` statt `retry.go` (Konvention: Dateiname
          beschreibt das Konzept, nicht die Implementierungsrolle).
-     (c) Task 6 deklariert `consumer_test.go` als NEU zu erstellen — diese Datei
-         existiert nicht im Repo und darf daher vom Realismus-Check NICHT als
-         "fehlt" gerügt werden (korrekte Klassifizierung: new/to-create).
+     (c) Task 6 legt `consumer_test.go` als neue Datei an — existiert nicht im Repo
+         und darf daher vom Realismus-Check NICHT als „fehlt" gerügt werden
+         (korrekte Klassifizierung: new/to-create).
 -->

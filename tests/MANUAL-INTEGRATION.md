@@ -31,8 +31,10 @@ Fixtures deshalb nicht.
    - **(b) Innerer Widerspruch:** Anf. 3 fordert bis zu 3 Retries, Anf. 6
      fordert sofortigen Stopp bei erstem Fehler — beides gleichzeitig ist nicht
      erfüllbar; muss als Widerspruch gemeldet werden.
-   - **(c) Falscher Pfad:** `config/notification-service-example.yaml` existiert
-     nicht im Projekt; der Faktencheck meldet `fehlt-faelschlich` für diesen Pfad.
+   - **(c) Falscher Pfad:** `tests/fixtures/plan-sample.md` existiert nicht unter
+     diesem Namen; die real existierende Datei heisst `tests/fixtures/sample-plan.md`
+     (Basename vertauscht). Der Realismus-Check meldet `abweichend` — Datei gefunden,
+     aber Pfad weicht ab.
 5. Behebbare Findings werden direkt am Dokument angewendet.
 6. Ein **Diff** gegen den Snapshot wird angezeigt.
 7. Offene Design-Gabelungen (z. B. Widerspruch Retry vs. Stop-on-Error) werden

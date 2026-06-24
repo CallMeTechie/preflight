@@ -18,8 +18,8 @@ wenn ein Ereignis im System ausgelöst wird.
 6. Im Fehlerfall MUSS eine Benachrichtigung in die Dead-Letter-Queue verschoben
    werden und der Service MUSS sofort stoppen und keine weiteren Nachrichten
    verarbeiten, bis der Fehler manuell behoben wurde.
-7. Das Konfigurationsformat ist YAML; ein Beispiel liegt unter
-   `config/notification-service-example.yaml`.
+7. Das Konfigurationsformat ist YAML; der zugehörige Umsetzungsplan liegt unter
+   `tests/fixtures/plan-sample.md`.
 
 ## Technische Einschränkungen
 
@@ -38,6 +38,7 @@ wenn ein Ereignis im System ausgelöst wird.
      (a) Zeile 16: Platzhalter TODO — Backoff-Intervall ungeklärt.
      (b) Widerspruch: Anf. 3 fordert bis zu 3 Retries, Anf. 6 fordert sofortigen
          Stopp bei erstem Fehler. Beides gleichzeitig ist nicht erfüllbar.
-     (c) Falscher Pfad: `config/notification-service-example.yaml` existiert im
-         Projekt nicht; korrekte Konvention wäre `configs/examples/notification.yaml`.
+     (c) Falscher Pfad: `tests/fixtures/plan-sample.md` — die Datei existiert real
+         als `tests/fixtures/sample-plan.md`, der Basename ist vertauscht.
+         Realismus-Check soll `abweichend` melden (existiert, aber Pfad weicht ab).
 -->
