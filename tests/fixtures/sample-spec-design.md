@@ -33,12 +33,3 @@ wenn ein Ereignis im System ausgelöst wird.
 - Read-Receipt-Tracking
 
 ---
-
-<!-- DEFECTS (für preflight-Test-Zwecke):
-     (a) Zeile 16: Platzhalter TODO — Backoff-Intervall ungeklärt.
-     (b) Widerspruch: Anf. 3 fordert bis zu 3 Retries, Anf. 6 fordert sofortigen
-         Stopp bei erstem Fehler. Beides gleichzeitig ist nicht erfüllbar.
-     (c) Falscher Pfad: `tests/fixtures/plan-sample.md` — die Datei existiert real
-         als `tests/fixtures/sample-plan.md`, der Basename ist vertauscht.
-         Realismus-Check soll `abweichend` melden (existiert, aber Pfad weicht ab).
--->

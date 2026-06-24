@@ -92,3 +92,26 @@ enthält den Hash von `sample-plan.md`.
   aufgefordert.
 - Erst wenn der Inhalt der Datei geändert wird (neuer Hash), erscheint
   der Nudge wieder.
+
+---
+
+## Absichtlich eingebaute Mängel (für den Prüfer)
+
+Diese Mängel sind im normalen Fliesstext der Fixtures versteckt. Die Fixtures
+selbst enthalten keine Meta-Doku über die Mängel, damit der Test valide bleibt.
+
+### `sample-spec-design.md`
+
+| # | Mangel | Erwartete Erkennung |
+|---|--------|---------------------|
+| (a) | Anforderung 4 enthält `TODO: Klären wie das Retry-Backoff-Intervall berechnet wird.` — offener Platzhalter, Backoff ungeklärt. | Als offener Platzhalter/unvollständige Anforderung melden. |
+| (b) | Anf. 3 fordert bis zu 3 Retries; Anf. 6 fordert sofortigen Stopp bei erstem Fehler — beides gleichzeitig ist nicht erfüllbar. | Als inneren Widerspruch melden; Entscheidungsfrage an den Autor. |
+| (c) | Referenz `tests/fixtures/plan-sample.md` — Basename vertauscht; die reale Datei heisst `tests/fixtures/sample-plan.md`. | Realismus-Check meldet `abweichend` (Datei gefunden, aber Pfad weicht ab). |
+
+### `sample-plan.md`
+
+| # | Mangel | Erwartete Erkennung |
+|---|--------|---------------------|
+| (a) | Push-Benachrichtigungen (Spec Anf. 5) sind im Plan nicht abgedeckt — kein Task für Push/FCM/APNs. | Als fehlende Abdeckung melden (Stufe 1); Go/No-Go = No-Go. |
+| (b) | Task 4 hardcodet ein festes 5-Sekunden-Intervall (Konvention: konfigurierbar); Dateiname `handler.go` statt konzeptbasiertem `retry.go`. | Als Konventionsverstoß melden (Stufe 2). |
+| (c) | Task 6 deklariert `internal/consumer/consumer_test.go` explizit als NEU (existiert nicht im Repo). | Realismus-Check klassifiziert als `new/to-create` — darf **nicht** als „Datei fehlt" gerügt werden. |
