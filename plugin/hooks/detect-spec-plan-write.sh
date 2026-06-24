@@ -11,6 +11,7 @@ FILE="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/nul
 CWD="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)"
 [ -n "$FILE" ] || exit 0
 preflight_path_ok "$FILE" || exit 0
+FILE="$(preflight_canon_path "$FILE")"
 
 MODE="$(preflight_detect_mode "$FILE")"
 [ -n "$MODE" ] || exit 0
