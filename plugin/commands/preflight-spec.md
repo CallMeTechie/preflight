@@ -1,6 +1,6 @@
 ---
 description: Run a preflight review (Author/Reviewer dialogue) on a superpowers spec, then apply all fixable findings with a snapshot+diff.
-argument-hint: [path] [max-rounds (default 5)]
+argument-hint: "[path] [max-rounds (default 5)]"
 ---
 
 # Preflight: Spec

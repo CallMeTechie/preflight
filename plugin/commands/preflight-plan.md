@@ -1,6 +1,6 @@
 ---
 description: Run a preflight review (6-stage review chain) on a superpowers plan against its spec, apply all fixable findings with a snapshot+diff, and give a Go/No-Go.
-argument-hint: [path]
+argument-hint: "[path]"
 ---
 
 # Preflight: Plan
