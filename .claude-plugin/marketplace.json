@@ -9,7 +9,7 @@
     {
       "name": "preflight",
       "source": "./plugin",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Automated preflight review of superpowers spec and plan documents. Detects newly written specs/plans, runs an adversarial review (Author/Reviewer dialogue for specs, a 6-stage review chain for plans), applies all fixable findings with a snapshot+diff, and gives a Go/No-Go."
     }
   ]
