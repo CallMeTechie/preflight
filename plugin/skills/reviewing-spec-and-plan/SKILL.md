@@ -100,5 +100,7 @@ During re-review the lock remains active and Steps 4–5 apply again.
 
 ## Error paths
 - If you abort early, remove the lock anyway (otherwise the hook stays silent until
-  the 30-minute staleness expires).
+  the 30-minute staleness expires). If the run is interrupted before you can clean up
+  (a lost tool result, a hard abort), the `clear-orphaned-lock.sh` SessionStart hook
+  removes the leftover lock on the next session, so preflight re-arms automatically.
 - If `.claude/` does not exist, create it.

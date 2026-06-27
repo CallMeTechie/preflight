@@ -12,6 +12,18 @@
 					}
 				]
 			}
+		],
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "${CLAUDE_PLUGIN_ROOT}/hooks/clear-orphaned-lock.sh",
+						"timeout": 10,
+						"description": "Clear an orphaned preflight review lock left by an interrupted run"
+					}
+				]
+			}
 		]
 	}
 }
