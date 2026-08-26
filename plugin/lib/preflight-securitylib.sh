@@ -16,20 +16,49 @@ preflight_marker_lines() {
 	' "$1" 2>/dev/null
 }
 
+# Line numbers of the security marker <kind> in <file> WITHOUT fence filtering.
+# Only used to detect a block that an unterminated fence would otherwise hide;
+# never use it to locate a block — a documented example would count as one.
+preflight_marker_lines_raw() {
+	awk -v kind="$2" '
+		{ line = $0; sub(/[[:space:]]+$/, "", line); sub(/^[[:space:]]+/, "", line) }
+		line == "<!-- preflight:security:" kind " -->" { print NR }
+	' "$1" 2>/dev/null
+}
+
+# Return 0 if a code fence is still open at end of <file>.
+preflight_fence_open_at_eof() {
+	awk '
+		{ line = $0; sub(/[[:space:]]+$/, "", line); sub(/^[[:space:]]+/, "", line) }
+		line ~ /^(```|~~~)/ { fence = !fence }
+		END { exit fence ? 0 : 1 }
+	' "$1" 2>/dev/null
+}
+
 # Classify the security block in <file>. No stdout; the exit code is the answer.
 #   0 = exactly one begin and one end, begin before end -> profiler may replace
 #   1 = neither marker present                          -> profiler writes fresh
-#   2 = anything else (one-sided, duplicated, reversed) -> abort, block damaged
+#   2 = anything else (one-sided, duplicated, reversed, or a real block hidden
+#       by an unterminated fence)                        -> abort, block damaged
 #   3 = file missing or unreadable                      -> abort, wrong path
 # Not a predicate: always branch on all four codes, never on success/failure.
 # Never collapse 2 into 1 — replacing between damaged markers eats spec content.
 preflight_security_block_state() {
-	local file="$1" lb le nb ne
+	local file="$1" lb le nb ne rb re
 	[ -f "$file" ] && [ -r "$file" ] || return 3
 	lb="$(preflight_marker_lines "$file" begin)"
 	le="$(preflight_marker_lines "$file" end)"
 	nb="$(printf '%s' "$lb" | grep -c . || :)"
 	ne="$(printf '%s' "$le" | grep -c . || :)"
+	# An unterminated fence swallows every marker below it. Without this the
+	# profiler would see "no block" and APPEND a second one below the first.
+	# Only a fence left open at EOF can do that, so a properly closed example
+	# block keeps classifying as before.
+	if preflight_fence_open_at_eof "$file"; then
+		rb="$(preflight_marker_lines_raw "$file" begin | grep -c . || :)"
+		re="$(preflight_marker_lines_raw "$file" end | grep -c . || :)"
+		if [ "$((rb + re))" -gt "$((nb + ne))" ]; then return 2; fi
+	fi
 	if [ "$nb" -eq 0 ] && [ "$ne" -eq 0 ]; then return 1; fi
 	if [ "$nb" -ne 1 ] || [ "$ne" -ne 1 ]; then return 2; fi
 	[ "$lb" -lt "$le" ] || return 2
@@ -39,6 +68,9 @@ preflight_security_block_state() {
 # The facts token string from the block in <file>, or exit 1. Only the comment
 # *between* the markers counts: a spec may quote the format in its prose, and
 # the first <!-- facts: in the file would then be an example, not the state.
+# All whitespace is squeezed to single spaces: the format separates tokens by
+# whitespace, so a tab-indented continuation line is legal, and preflight_fact_get
+# matches on a literal space.
 preflight_security_facts_raw() {
 	local file="$1" lb le
 	lb="$(preflight_marker_lines "$file" begin | head -1)"
@@ -46,7 +78,8 @@ preflight_security_facts_raw() {
 	[ -n "$lb" ] && [ -n "$le" ] && [ "$lb" -lt "$le" ] || return 1
 	sed -n "${lb},${le}p" "$file" \
 	  | awk '/<!-- facts:/{f=1} f{print} f && /-->/{exit}' \
-	  | sed -e 's/.*<!-- facts://' -e 's/-->.*//' | tr '\n' ' '
+	  | sed -e 's/.*<!-- facts://' -e 's/-->.*//' | tr '\n' ' ' \
+	  | tr -s '[:space:]' ' '
 }
 
 # Allowed values for one of the eleven security facts, space separated.
@@ -84,6 +117,9 @@ preflight_fact_get() {
 # eleven defined keys, every value is allowed, and all consistency conditions
 # hold. Never guesses, never fills in a default: a silently completed fact
 # deletes a required row without anyone seeing it.
+# Precondition: the caller has already checked preflight_security_block_state —
+# this function reads between the FIRST begin and the FIRST end and therefore
+# returns 0 on a duplicated (state 2) block whose first block happens to be valid.
 preflight_security_facts_valid() {
 	local file="$1" raw tok k v allowed key found n
 	raw="$(preflight_security_facts_raw "$file")" || return 1

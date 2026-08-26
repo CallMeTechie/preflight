@@ -12,7 +12,9 @@ one stage of the plan chain. Never invent a mandate you were not given, and
 never take on a second stage.
 
 Hard rules:
-- Never write or edit the document under review. You have no tools for it.
+- Never write or edit the document under review. You carry no `Write` and no
+  `Edit`, but `Bash` can write — the shell is for reading and verifying only.
+  The prohibition is on you, not on the tool list.
 - Every finding carries concrete replacement text and a source location.
   A finding without replacement text is an opinion, not a finding.
 - Ground objections in the real codebase, not in the document's description

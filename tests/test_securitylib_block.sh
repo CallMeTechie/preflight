@@ -40,6 +40,15 @@ assert_eq "$(code)" "1" "markers inline in prose do not count"
 mk "# Spec" '```' "$B" '```' "$B" "real" "$E"
 assert_eq "$(code)" "0" "a fenced example next to a real block still resolves"
 
+# an unterminated fence must not hide a real block: the profiler would see
+# "no markers" and append a SECOND block below the first one
+mk "# Spec" '```' "example" "$B" "real" "$E"
+assert_eq "$(code)" "2" "unterminated fence above a real block -> 2"
+
+# the same check must not fire on a *closed* fenced example
+mk "# Spec" '```markdown' "$B" "example" "$E" '```' "prose"
+assert_eq "$(code)" "1" "closed fenced example still -> 1, not 2"
+
 preflight_security_block_state "$tmp/does-not-exist.md"
 assert_eq "$?" "3" "missing file -> 3, not a marker problem"
 
@@ -91,6 +100,15 @@ assert_eq "$?" "1" "a glob in the facts comment is not expanded"
 sed 's/persistence=sql/persistence=sql persistence=none/' "$FIX/sample-spec-with-security-design.md" > "$tmp/dup.md"
 preflight_security_facts_valid "$tmp/dup.md"
 assert_eq "$?" "1" "duplicate key is rejected"
+
+# the format separates tokens by whitespace, not by spaces: a tab-indented
+# continuation line and a tab between two tokens are both legal
+TAB="$(printf '\t')"
+sed -e "s/^     /$TAB/" -e "s/has_accounts=yes /has_accounts=yes$TAB/" \
+    "$FIX/sample-spec-with-security-design.md" > "$tmp/tabs.md"
+if [ "$(grep -c "$TAB" "$tmp/tabs.md")" -gt 0 ]; then echo "ok: tab fixture actually carries tabs"; else echo "FAIL: tab fixture carries no tab"; fail=1; fi
+preflight_security_facts_valid "$tmp/tabs.md"
+assert_eq "$?" "0" "tab separated facts comment is accepted"
 
 rm -rf "$tmp"
 exit $fail

@@ -51,6 +51,23 @@ for f in "$AGENTS"/*.md; do
   [ "$body_lines" -ge 1 ] && ok "$base: body not empty" || bad "$base: body is empty"
   [ "$body_lines" -le 20 ] && ok "$base: body <= 20 lines" \
     || bad "$base: body has $body_lines non-blank lines, limit is 20"
+
+  # An agent carrying Bash can write through the shell (`>`, `sed -i`, `tee`),
+  # so no tool list makes it read-only. The prohibition is prompt-borne — this
+  # asserts that the prompt actually carries it.
+  case "$tools" in
+    *Bash*)
+      body="$(sed -n "$((body_start + 1)),\$p" "$f")"
+      printf '%s' "$body" | grep -qiE '^- +Never (write|edit|touch)' \
+        && ok "$base: carries Bash and states a write prohibition" \
+        || bad "$base: carries Bash but states no write prohibition in its body"
+      case "$tools" in
+        *Write*|*Edit*) ;;
+        *) printf '%s' "$body" | grep -qiE '^- +Never write' \
+             && ok "$base: read-only agent forbids writing explicitly" \
+             || bad "$base: read-only agent with Bash lacks a 'Never write' rule" ;;
+      esac ;;
+  esac
 done
 
 # exactly one agent may hold write tools, and it must be editor.md
