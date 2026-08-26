@@ -16,12 +16,14 @@ resolve to a user-defined agent with unknown tools.
 
 **If an agent cannot be resolved**, do not abort. Fall back and say so:
 `preflight:reviewer` and `preflight:factchecker` fall back to the built-in
-`Explore` (which carries no `Write`, `Edit` or `NotebookEdit` — the read-only
-guarantee survives), `preflight:editor` falls back to `general-purpose`. Name the
-deviation verbatim in the final report: "Tiering inaktiv: `preflight:<name>` nicht
-auflösbar, Lauf auf `<fallback>`." Never fall back to `general-purpose` for the
-two read-only roles: it carries write tools, and the guarantee would fail
-silently on the one path no test covers.
+`Explore`, which carries no `Write`, `Edit` or `NotebookEdit` — the same tool
+profile as the two shipped agents. It carries `Bash` as they do, so the write
+prohibition stays prompt-borne there too: repeat it in the dispatch.
+`preflight:editor` falls back to `general-purpose`. Name the deviation verbatim
+in the final report: "Tiering inaktiv: `preflight:<name>` nicht auflösbar, Lauf
+auf `<fallback>`." Never fall back to `general-purpose` for the two read-only
+roles: it carries `Write` and `Edit` outright, which is a step down from a
+prohibition that at least holds where it is stated.
 
 ## Step 1 — Load context
 - Read the file at `path`. If it is empty or has fewer than ~15 substantive lines:
@@ -79,10 +81,17 @@ Source `plugin/lib/preflight-securitylib.sh` and call
 `preflight_security_block_state "<path>"`.
 
 - Exit `1` (no block): run the profiler from `references/security-profile.md`,
-  all five phases. Security cannot be forgotten this way; a project without a
-  network surface costs one question and ends with a block of a handful of rows.
+  all five phases. Security cannot be forgotten this way. A project without a
+  network surface skips every question about `session_transport`, `renders_html`
+  and `accepts_uploads` — the consistency conditions settle those three — but the
+  seven non-network facts are still asked wherever the spec does not settle them,
+  and the run ends with a block of a handful of rows.
 - Exit `0` (block present): do **not** run the profiler. The dialogue's
-  "Security-Profil" topic checks the block for drift instead.
+  "Security-Profil" topic checks the block for drift instead. Call
+  `preflight_security_facts_valid "<path>"` here as well: on non-zero, report the
+  invalid `facts` comment and recommend `/preflight-profile --redo`. Do **not**
+  abort — the dialogue still runs; the point is that an invalid block is named
+  rather than sailing through unreported.
 - Exit `2` (damaged markers): abort the run, report the marker state, write
   nothing.
 - Exit `3` (path unreadable): abort the run and report the path — the spec was not
@@ -132,19 +141,25 @@ the document content. Only carry findings of type `missing` /
    the editor is prompt-borne, not structural, so it holds only where it is stated.
 
    **Verify it, do not trust it.** `preflight:editor` carries `Write`. Record the
-   block right after Step 4:
+   block right after Step 4, using `preflight_marker_lines` from
+   `plugin/lib/preflight-securitylib.sh` to find the range — a plain
+   `sed -n '/begin/,/end/p'` would pick up a fenced example on a spec that
+   documents the format, and then disagree with every other marker lookup:
 
-       sed -n '/<!-- preflight:security:begin -->/,/<!-- preflight:security:end -->/p' \
-           < "<path>" > "<project>/.claude/.preflight-secblock"
+       lb="$(preflight_marker_lines "<path>" begin | head -1)"
+       le="$(preflight_marker_lines "<path>" end | head -1)"
+       sed -n "${lb},${le}p" "<path>" > "<project>/.claude/.preflight-secblock"
 
-   and compare after the last fix, before the diff:
+   and compare after the last fix, before the diff. Re-derive the range instead
+   of reusing `lb`/`le`: a fix above the block shifts every line number:
 
-       sed -n '/<!-- preflight:security:begin -->/,/<!-- preflight:security:end -->/p' \
-           < "<path>" | diff -q - "<project>/.claude/.preflight-secblock"
+       lb="$(preflight_marker_lines "<path>" begin | head -1)"
+       le="$(preflight_marker_lines "<path>" end | head -1)"
+       sed -n "${lb},${le}p" "<path>" | diff -q - "<project>/.claude/.preflight-secblock"
 
    A difference means the protection was breached: restore the region from the
-   snapshot, drop the fix that caused it, and report it as a Blocker. Delete the
-   recording when the lock is released.
+   snapshot, drop the fix that caused it, and report it as a Blocker. Step 9
+   deletes the recording together with the lock.
 3. Show the user the **diff** against the snapshot (not just a fix list).
 4. **Plan mode:** formulate an explicit **Go/No-Go** with reasoning.
 
@@ -165,11 +180,19 @@ threshold from expiring in the middle of a long re-review.
 During re-review the lock remains active and Steps 6–7 apply again.
 
 ## Step 9 — Release lock, write state, report
-- Remove `.preflight-running`, **then** write the reviewed state.
+- Remove `.preflight-running` and `.preflight-secblock` (the Step 7 recording),
+  **then** write the reviewed state.
+- **Profile mode: write no state.** The profiler is not a review, and
+  `.preflight-reviewed` means "this file was reviewed under this hash". Recording
+  it here would mark the spec as reviewed although no fact-check and no dialogue
+  ever ran — a permanent false state that also silences the hook for the very
+  file that still needs a review. Release the lock, report, and leave
+  `.preflight-reviewed` untouched.
 - Before writing: verify that `path` contains no control characters by calling
   `preflight_path_ok "<path>"`. If it returns non-zero, abort without writing the
   state (a corrupt state line would break the hook).
-- Write the state using the shell function from `plugin/hooks/preflight-hooklib.sh`:
+- In spec and plan mode, write the state using the shell function from
+  `plugin/hooks/preflight-hooklib.sh`:
   ```
   preflight_record_reviewed "<state_file>" "<path>" "<hash>"
   ```

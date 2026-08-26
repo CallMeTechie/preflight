@@ -90,7 +90,11 @@ outputs the revised plan + explicit **Go/No-Go** with reasoning.
    - a `recommended` ID on `uncovered` ⇒ Important finding, verdict untouched
    - a `NEW-SURFACE` entry ⇒ **Blocker** if the affected fact, at its actual
      value, would trigger at least one `required` rule that is not already in the
-     block; otherwise **Important**, verdict untouched. In **both** cases the
+     block; otherwise **Important**, verdict untouched. Read
+     `references/security-matrix.md` to decide this — it is the only place that
+     says which rules a fact value triggers, and nothing else in the plan chain
+     points you at it. Do not guess the rules from the block: the block lists
+     what the *stored* value triggered. In **both** cases the
      `facts` comment counts as outdated: name the fact, its stored and its actual
      value, and point at `/preflight-profile --redo`. A Go despite a
      `NEW-SURFACE` entry carries that note visibly in the report.

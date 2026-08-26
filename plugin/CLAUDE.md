@@ -51,13 +51,21 @@ is used. `/preflight-spec` accepts an optional second parameter `max-rounds` (de
 
 | Agent | Role | Tools | Model |
 |-------|------|-------|-------|
-| `preflight:factchecker` | Step 5, references against the codebase | read-only | `sonnet` |
-| `preflight:reviewer` | Step 6, dialogue and the five plan stages | read-only | `inherit` |
-| `preflight:editor` | Step 7, large mechanical fix-edits | read/write | `sonnet` |
+| `preflight:factchecker` | Step 5, references against the codebase | `Read, Grep, Glob, Bash` | `sonnet` |
+| `preflight:reviewer` | Step 6, dialogue and the five plan stages | `Read, Grep, Glob, Bash` | `inherit` |
+| `preflight:editor` | Step 7, large mechanical fix-edits | `Read, Edit, Write, Bash` | `sonnet` |
 
 `factchecker` and `reviewer` carry no `Write` or `Edit`, and
 `tests/test_agents_wellformed.sh` holds that: exactly one file under
 `plugin/agents/` may carry write tools, and it must be `editor.md`.
+
+That is **not** a guarantee that the two cannot write. Both carry `Bash`, and a
+shell writes perfectly well (`> f`, `sed -i`, `tee`) — the factchecker needs the
+shell to verify versions, paths and git state, so removing it is not on the
+table. The prohibition is therefore **prompt-borne**: it is stated in each agent
+body, and `tests/test_agents_wellformed.sh` asserts that every `Bash`-carrying
+agent states it. A named, accepted residual risk — the same shape as the
+security block's protection against `editor` (see the skill's Step 7).
 
 ### 5. Security profiler
 
@@ -70,7 +78,7 @@ knowledge.
 
 ## State Files
 
-Both located under `<project-root>/.claude/`:
+All located under `<project-root>/.claude/`:
 
 | File                       | Meaning                                                      |
 |----------------------------|--------------------------------------------------------------|
@@ -80,6 +88,10 @@ Both located under `<project-root>/.claude/`:
 |                            | it stuck (see hook 1b).                                       |
 | `.preflight-reviewed`      | One line `<sha256>\t<path>` per reviewed file.               |
 |                            | A new hash for the same file → hook nudges again.            |
+|                            | Profile mode never writes it — no review ran.                |
+| `.preflight-secblock`      | Copy of the security block, taken in the skill's Step 7 to   |
+|                            | detect an edit inside the write-protected region. Deleted    |
+|                            | together with the lock in Step 9.                            |
 
 ## Advisory Nature
 
