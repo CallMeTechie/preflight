@@ -123,7 +123,7 @@ the hash of `sample-plan.md`.
 
 **Command:**
 ```
-/preflight-spec <spec of a CLI tool: no server, no accounts, no persistence>
+/preflight-spec tests/fixtures/sample-spec-cli-design.md
 ```
 
 **Expected behavior:**
@@ -156,8 +156,8 @@ cp tests/fixtures/sample-spec-with-security-design.md docs/superpowers/specs/
 
 **Command:**
 ```
-/preflight-spec <spec of a JSON API: Authorization: Bearer, no cookies, no HTML>
-/preflight-plan <a plan for that spec>
+/preflight-spec tests/fixtures/sample-spec-bearer-design.md
+/preflight-plan tests/fixtures/sample-plan-bearer.md
 ```
 
 **Expected behavior:**
@@ -176,8 +176,7 @@ on the existence of forms.
 
 **Command:**
 ```
-# take the spec from Scenario 6, write a plan that introduces a file upload
-/preflight-plan <that plan>
+/preflight-plan tests/fixtures/sample-plan-upload.md
 ```
 
 **Expected behavior:**
