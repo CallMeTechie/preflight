@@ -1,4 +1,4 @@
-# Fact-Check Prompt (cheap-explorer, Realism)
+# Fact-Check Prompt (preflight:factchecker, Realism)
 
 You receive the content of a spec or plan document and have access to the real
 codebase. Check every concrete reference to a file, path, module, function, API,

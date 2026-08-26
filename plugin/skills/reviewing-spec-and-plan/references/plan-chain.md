@@ -6,7 +6,7 @@ filtered to entries with category `missing` or `deviating`.
 **design_forks:** findings whose resolution requires a real design decision with
 no objectively correct answer.
 
-Stages 1–5 each run as their own cheap-reviewer (in parallel). Each receives: PLAN,
+Stages 1–5 each run as their own preflight:reviewer (in parallel). Each receives: PLAN,
 the associated SPEC, and the factlist. Each delivers prioritised findings (Blocker/
 Important/Optional) with concrete replacement text + source location and optional
 `design_forks`.

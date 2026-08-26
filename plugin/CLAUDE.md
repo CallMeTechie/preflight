@@ -32,7 +32,7 @@ Core logic. Triggered by the hook nudge **or** directly by a command.
 **Spec mode:** adversarial Author/Reviewer dialogue (up to `max-rounds`).
 **Plan mode:** 6-stage review chain (Stages 1–5 in parallel, Stage 6 = Consolidator).
 
-Flow: Set lock → Fact-check (`cheap-explorer`) → Review (`cheap-reviewer`)
+Flow: Set lock → Fact-check (`preflight:factchecker`) → Review (`preflight:reviewer`)
 → Consolidate findings → Snapshot + Fixes + Diff → Adaptive re-review →
 Release lock → Write state → Report + open design forks.
 

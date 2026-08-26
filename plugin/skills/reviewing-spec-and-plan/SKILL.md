@@ -8,9 +8,20 @@ description: Use to run a deep preflight review of a superpowers spec or plan do
 **Input:** `mode` (`spec` | `plan`) + `path` to the file. Source: hook reminder
 or command argument. Reference prompts are located under `references/` next to this file.
 
-**Tiering (mandatory):** Delegate reviewer work to `cheap-reviewer`, codebase
-fact-checking to `cheap-explorer`, large mechanical fix-edits to `cheap-coder`;
-the main loop handles only consolidation, judgment, and fix decisions.
+**Tiering (mandatory):** Delegate reviewer work to `preflight:reviewer`, codebase
+fact-checking to `preflight:factchecker`, large mechanical fix-edits to
+`preflight:editor`; the main loop handles only consolidation, judgment, and fix
+decisions. Always address them prefixed — a bare `reviewer` or `editor` may
+resolve to a user-defined agent with unknown tools.
+
+**If an agent cannot be resolved**, do not abort. Fall back and say so:
+`preflight:reviewer` and `preflight:factchecker` fall back to the built-in
+`Explore` (which carries no `Write`, `Edit` or `NotebookEdit` — the read-only
+guarantee survives), `preflight:editor` falls back to `general-purpose`. Name the
+deviation verbatim in the final report: "Tiering inaktiv: `preflight:<name>` nicht
+auflösbar, Lauf auf `<fallback>`." Never fall back to `general-purpose` for the
+two read-only roles: it carries write tools, and the guarantee would fail
+silently on the one path no test covers.
 
 ## Step 1 — Load context
 - Read the file at `path`. If it is empty or has fewer than ~15 substantive lines:
@@ -30,14 +41,14 @@ report the error — never proceed without the lock.** Order is critical:
 The lock suppresses review-own edits to the document in the hook.
 
 ## Step 3 — Fact-check
-Dispatch a `cheap-explorer` with the prompt from `references/factcheck.md` plus
+Dispatch a `preflight:factchecker` with the prompt from `references/factcheck.md` plus
 the document content. Only carry findings of type `missing` /
 `deviating` into the review.
 
 ## Step 4 — Review
-- **Spec mode:** Dispatch ONE `cheap-reviewer` with `references/spec-dialogue.md`
+- **Spec mode:** Dispatch ONE `preflight:reviewer` with `references/spec-dialogue.md`
   (document + fact list + max-rounds).
-- **Plan mode:** The main loop builds FIVE SEPARATE dispatches to `cheap-reviewer`
+- **Plan mode:** The main loop builds FIVE SEPARATE dispatches to `preflight:reviewer`
   and runs them in PARALLEL. Each dispatch assigns EXACTLY ONE stage explicitly —
   for example: "You are Reviewer N. Your mandate is exclusively Stage N: <title>
   from references/plan-chain.md". Do NOT pass the full plan-chain.md text
@@ -59,7 +70,7 @@ the document content. Only carry findings of type `missing` /
    commit — use the `.bak` method instead: `cp -- "<path>" "<path>.preflight.bak"`.
    If the file is not in a Git repository, always use the `.bak` method.
 3. Apply ALL fixable findings directly to the document (large mechanical edits via
-   `cheap-coder`). Do NOT guess on genuine `design_forks` — collect them for Step 7.
+   `preflight:editor`). Do NOT guess on genuine `design_forks` — collect them for Step 7.
 4. Show the user the **diff** against the snapshot (not just a fix list).
 5. **Plan mode:** formulate an explicit **Go/No-Go** with reasoning.
 

@@ -1,4 +1,4 @@
-# Spec Review: Author↔Reviewer Dialogue (cheap-reviewer)
+# Spec Review: Author↔Reviewer Dialogue (preflight:reviewer)
 
 Simulate a review conversation between two engineers about the SPEC document.
 

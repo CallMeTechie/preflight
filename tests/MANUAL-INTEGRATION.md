@@ -22,8 +22,8 @@ these fixtures are written.
 **Expected behavior:**
 
 1. The skill sets the lock `.claude/.preflight-running`.
-2. A `cheap-explorer` checks file references for existence.
-3. A `cheap-reviewer` runs the author/reviewer dialog.
+2. A `preflight:factchecker` checks file references for existence.
+3. A `preflight:reviewer` runs the author/reviewer dialog.
 4. The review **finds all three intentional defects**:
    - **(a) Placeholder:** Requirement 4 contains `TODO: Clarify how the retry
      backoff interval is calculated.` — must be reported as an open placeholder.
@@ -54,7 +54,7 @@ these fixtures are written.
 
 1. The skill reads the `Spec:` line and loads `tests/fixtures/sample-spec-design.md`.
 2. Lock is set.
-3. Fact-check + 5 parallel `cheap-reviewer` stages (1–5) + consolidator.
+3. Fact-check + 5 parallel `preflight:reviewer` stages (1–5) + consolidator.
 4. The review **finds all four intentional defects**:
    - **(a) Missing coverage (Stage 1):** Push notifications from Spec Req. 5 are
      not covered by the plan — no task for Push/FCM/APNs.
@@ -116,6 +116,23 @@ the hash of `sample-plan.md`.
    before continuing.
 6. The review then runs identically to Scenario 2 (same defects expected).
 7. No crash or silent failure occurs in either the single-match or ambiguous case.
+
+---
+
+## Scenario 9 — Agent dispatch
+
+**Command:**
+```
+/preflight-spec <any spec>
+```
+
+**Expected behavior:**
+
+1. `preflight:factchecker` appears as a dispatched subagent for the fact-check step.
+2. `preflight:reviewer` appears as a dispatched subagent for the review step.
+3. The report carries **no** fallback note. A report saying
+   "Tiering inaktiv: `preflight:<name>` nicht auflösbar, Lauf auf `<fallback>`" means
+   registration failed — a different failure from "no note, but also no dispatch". Both are bugs.
 
 ---
 
