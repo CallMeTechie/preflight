@@ -54,8 +54,13 @@ The hook triggers the same review automatically after a spec/plan is written.
 `/preflight-spec` now asks questions on any spec without a security block —
 including projects where nobody thought about security. That is intended, but it
 is new: a run that used to start with the fact-check now starts with the
-profiler. Projects without a network surface cost one question and end with a
-five-line block.
+profiler. Projects without a network surface skip every question about
+`session_transport`, `renders_html`, and `accepts_uploads`, and ten of the
+twenty-four rules resolve to `not-applicable` without being asked. The seven
+remaining non-network facts still get asked when the spec doesn't settle them,
+so a tool with no accounts, no persistence, and no PII still ends up with a
+short block that keeps `SEC-SECRET-01`, `SEC-DEP-01`, and `SEC-INJECT-01`
+as `required`.
 
 ## License
 
