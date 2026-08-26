@@ -12,5 +12,8 @@ Arguments: `$ARGUMENTS` = optional `[path] [max-rounds]`.
   filename, then mtime).
 - `max-rounds` default 5.
 
-Execute the skill exactly following its step sequence (Lock → Fact-check → Dialogue →
-Snapshot+Fixes+Diff → Adaptive re-review → Release lock/State/Report).
+Execute the skill exactly following its step sequence (Lock → Snapshot → Security profile → Fact-check
+→ Dialogue → Consolidation+Fixes+Diff → Adaptive re-review → Release lock/State/Report).
+
+On a spec without a `<!-- preflight:security:begin -->` block the run starts with the
+security profiler and asks about the project facts it cannot derive — new in 0.2.0.

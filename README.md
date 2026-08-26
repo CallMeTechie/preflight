@@ -15,8 +15,8 @@ Three decoupled building blocks:
 | Block | Role |
 |-------|------|
 | **Hook** (`PostToolUse`) | Detects a written spec/plan file and *nudges* the review — advisory, never blocking. Debounced by content hash + an in-progress lock so it never loops on its own edits. |
-| **Skill** (`reviewing-spec-and-plan`) | Orchestrates the review: a codebase fact-check, the review itself, fix application with snapshot+diff, and an adaptive re-review. |
-| **Commands** | `/preflight-spec` and `/preflight-plan` for running a review manually. |
+| **Skill** (`reviewing-spec-and-plan`) | Orchestrates the review: a snapshot, a security profile, a codebase fact-check, the review itself, fix application with diff, and an adaptive re-review. |
+| **Commands** | `/preflight-spec`, `/preflight-plan`, and `/preflight-profile` for running a review manually. |
 
 **Specs** are reviewed through an **Author ↔ Reviewer dialogue**: a senior reviewer raises substantive concerns round by round, the author defends or concedes with concrete replacements.
 
@@ -45,8 +45,17 @@ claude plugin install /path/to/preflight/plugin
 |---------|--------------|
 | `/preflight-spec [path] [max-rounds]` | Review a spec via the Author/Reviewer dialogue. Defaults to the newest file in `docs/superpowers/specs/`. |
 | `/preflight-plan [path] [max-rounds]` | Review a plan via the 6-stage chain against its spec. Defaults to the newest file in `docs/superpowers/plans/`. |
+| `/preflight-profile [path]` | Security profile for `[path]`; `--review` / `--redo`. |
 
 The hook triggers the same review automatically after a spec/plan is written.
+
+### Changed in 0.2.0
+
+`/preflight-spec` now asks questions on any spec without a security block —
+including projects where nobody thought about security. That is intended, but it
+is new: a run that used to start with the fact-check now starts with the
+profiler. Projects without a network surface cost one question and end with a
+five-line block.
 
 ## License
 

@@ -6,7 +6,7 @@ Advisory nudge + review skill for superpowers spec and plan documents.
 
 ### 1a. Hook — `plugin/hooks/detect-spec-plan-write.sh`
 
-PostToolUse hook. Fired after every `Write` call.
+PostToolUse hook. Fired after every `Write` and `Edit` call.
 - Detects spec files (`docs/superpowers/specs/*-design.md`) and plan files
   (`docs/superpowers/plans/*.md`) by path.
 - **Never blocks.** On a match it emits `hookSpecificOutput.additionalContext` —
@@ -32,9 +32,9 @@ Core logic. Triggered by the hook nudge **or** directly by a command.
 **Spec mode:** adversarial Author/Reviewer dialogue (up to `max-rounds`).
 **Plan mode:** 6-stage review chain (Stages 1–5 in parallel, Stage 6 = Consolidator).
 
-Flow: Set lock → Fact-check (`preflight:factchecker`) → Review (`preflight:reviewer`)
-→ Consolidate findings → Snapshot + Fixes + Diff → Adaptive re-review →
-Release lock → Write state → Report + open design forks.
+Flow: Set lock → Snapshot → Security profile → Fact-check (`preflight:factchecker`)
+→ Review (`preflight:reviewer`) → Consolidate + Fixes + Diff → Adaptive re-review
+→ Release lock → Write state → Report + open design forks.
 
 ### 3. Commands — `plugin/commands/`
 
@@ -42,9 +42,31 @@ Release lock → Write state → Report + open design forks.
 |----------------------|------------------------------------------------------|
 | `/preflight-spec`    | Starts the skill in Spec mode for `[path]`           |
 | `/preflight-plan`    | Starts the skill in Plan mode for `[path]`           |
+| `/preflight-profile` | Security profile for `[path]`; `--review` / `--redo`  |
 
 Without a `path` argument the most recent matching file in the respective directory
 is used. `/preflight-spec` accepts an optional second parameter `max-rounds` (default 5).
+
+### 4. Agents — `plugin/agents/`
+
+| Agent | Role | Tools | Model |
+|-------|------|-------|-------|
+| `preflight:factchecker` | Step 5, references against the codebase | read-only | `sonnet` |
+| `preflight:reviewer` | Step 6, dialogue and the five plan stages | read-only | `inherit` |
+| `preflight:editor` | Step 7, large mechanical fix-edits | read/write | `sonnet` |
+
+`factchecker` and `reviewer` carry no `Write` or `Edit`, and
+`tests/test_agents_wellformed.sh` holds that: exactly one file under
+`plugin/agents/` may carry write tools, and it must be `editor.md`.
+
+### 5. Security profiler
+
+`/preflight-profile` and step 4 of the skill. Derives eleven project facts, applies
+`references/security-matrix.md`, and writes a marked block into the spec. See
+`references/security-profile.md`. The shell side lives in
+`plugin/lib/preflight-securitylib.sh` — deliberately not in `plugin/hooks/`, which the
+PostToolUse hook sources on every `Write` and `Edit` and which stays free of domain
+knowledge.
 
 ## State Files
 
