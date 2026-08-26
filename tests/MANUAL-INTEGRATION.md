@@ -119,6 +119,76 @@ the hash of `sample-plan.md`.
 
 ---
 
+## Scenario 5 — CLI tool, no network surface
+
+**Command:**
+```
+/preflight-spec <spec of a CLI tool: no server, no accounts, no persistence>
+```
+
+**Expected behavior:**
+
+1. The profiler asks about `network_surface` and the seven non-network facts it cannot derive.
+2. `network_surface = none` settles `session_transport`, `renders_html` and `accepts_uploads`
+   through the consistency conditions — none of the three is asked.
+3. Ten of the twenty-four rules end up `not-applicable` without a question.
+4. The written block keeps `SEC-SECRET-01`, `SEC-DEP-01` and `SEC-INJECT-01` as `required`.
+
+---
+
+## Scenario 6 — Web app with a cookie session
+
+**Command:**
+```
+cp tests/fixtures/sample-spec-with-security-design.md docs/superpowers/specs/
+# delete the block between the markers, then:
+/preflight-spec docs/superpowers/specs/sample-spec-with-security-design.md
+```
+
+**Expected behavior:**
+
+1. `SEC-CSRF-01` and `SEC-SESS-01` come back `required`.
+2. The rewritten `facts` comment matches the one in the fixture.
+
+---
+
+## Scenario 7 — Bearer-token API
+
+**Command:**
+```
+/preflight-spec <spec of a JSON API: Authorization: Bearer, no cookies, no HTML>
+/preflight-plan <a plan for that spec>
+```
+
+**Expected behavior:**
+
+1. `SEC-CSRF-01` is `not-applicable` with a reason naming the transport.
+2. `SEC-TOKEN-01` is `required`; `SEC-XSS-01` and `SEC-CSP-01` are `not-applicable`.
+3. The plan review produces **no** CSRF finding — the `not-applicable` row is discarded by
+   stage 6, not counted as `uncovered`.
+
+This is the scenario that shows whether the rule really hangs on `session_transport` rather than
+on the existence of forms.
+
+---
+
+## Scenario 8 — Drift
+
+**Command:**
+```
+# take the spec from Scenario 6, write a plan that introduces a file upload
+/preflight-plan <that plan>
+```
+
+**Expected behavior:**
+
+1. Stage 3 emits a `NEW-SURFACE` line naming `accepts_uploads`, `no -> yes` and a location.
+2. `accepts_uploads = yes` would trigger `SEC-UPLOAD-01` (`required`, not in the block), so
+   stage 6 grades it a **Blocker**.
+3. The report points at `/preflight-profile --redo`.
+
+---
+
 ## Scenario 9 — Agent dispatch
 
 **Command:**
