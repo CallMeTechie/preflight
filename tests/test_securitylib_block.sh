@@ -43,5 +43,49 @@ assert_eq "$(code)" "0" "a fenced example next to a real block still resolves"
 preflight_security_block_state "$tmp/does-not-exist.md"
 assert_eq "$?" "3" "missing file -> 3, not a marker problem"
 
+FIX="$HERE/fixtures"
+
+preflight_security_block_state "$FIX/sample-spec-with-security-design.md"
+assert_eq "$?" "0" "fixture with block -> 0"
+
+preflight_security_facts_valid "$FIX/sample-spec-with-security-design.md"
+assert_eq "$?" "0" "fixture facts are valid"
+
+preflight_security_facts_valid "$FIX/sample-spec-invalid-facts-design.md"
+assert_eq "$?" "1" "persistence=sqlite is rejected"
+
+# a missing fact is as fatal as a wrong value
+sed 's/ handles_pii=yes//' "$FIX/sample-spec-with-security-design.md" > "$tmp/missing.md"
+preflight_security_facts_valid "$tmp/missing.md"
+assert_eq "$?" "1" "missing fact is rejected"
+
+# an unknown key is rejected
+sed 's/handles_pii=yes/handles_pii=yes bogus_key=yes/' "$FIX/sample-spec-with-security-design.md" > "$tmp/bogus.md"
+preflight_security_facts_valid "$tmp/bogus.md"
+assert_eq "$?" "1" "unknown key is rejected"
+
+# consistency: renders_html=yes with an api-only surface
+sed 's/network_surface=http-html/network_surface=http-api/' "$FIX/sample-spec-with-security-design.md" > "$tmp/inconsistent.md"
+preflight_security_facts_valid "$tmp/inconsistent.md"
+assert_eq "$?" "1" "renders_html=yes with http-api is rejected"
+
+# a block without a facts comment cannot be derived from
+sed '/<!-- facts:/,/-->/d' "$FIX/sample-spec-with-security-design.md" > "$tmp/nofacts.md"
+preflight_security_facts_valid "$tmp/nofacts.md"
+assert_eq "$?" "1" "block without facts comment is rejected"
+
+# a facts example quoted ABOVE the block must not win over the real one
+{ printf '%s\n\n' 'Format: `<!-- facts: network_surface=none has_accounts=no -->`'
+  cat "$FIX/sample-spec-with-security-design.md"; } > "$tmp/quoted.md"
+preflight_security_facts_valid "$tmp/quoted.md"
+assert_eq "$?" "0" "a quoted facts example above the block is ignored"
+
+# a glob in the facts comment must never be expanded against the working directory
+sed 's/persistence=sql/persistence=s*/' "$FIX/sample-spec-with-security-design.md" > "$tmp/glob.md"
+( cd "$tmp" && : > 'persistence=sql'
+  preflight_security_facts_valid "$tmp/glob.md"
+  exit $? )
+assert_eq "$?" "1" "a glob in the facts comment is not expanded"
+
 rm -rf "$tmp"
 exit $fail
