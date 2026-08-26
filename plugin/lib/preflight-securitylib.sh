@@ -85,7 +85,7 @@ preflight_fact_get() {
 # hold. Never guesses, never fills in a default: a silently completed fact
 # deletes a required row without anyone seeing it.
 preflight_security_facts_valid() {
-	local file="$1" raw tok k v allowed key found
+	local file="$1" raw tok k v allowed key found n
 	raw="$(preflight_security_facts_raw "$file")" || return 1
 	case "$raw" in *[![:space:]]*) ;; *) return 1 ;; esac
 	# Glob characters can never appear in a valid value. Reject them before any
@@ -93,6 +93,12 @@ preflight_security_facts_valid() {
 	# 'persistence=s*' next to a file named 'persistence=sql' would otherwise
 	# expand into a valid token.
 	case "$raw" in *[*?[]*) return 1 ;; esac
+	# Exactly eleven tokens, no more, no less. A duplicated key (e.g. two
+	# 'persistence=' tokens with conflicting values) would otherwise pass the
+	# per-token loop unnoticed and preflight_fact_get would silently pick the
+	# first one, which is exactly the guessing this function refuses to do.
+	set -- $raw; n="$#"
+	[ "$n" -eq 11 ] || return 1
 
 	for tok in $raw; do
 		case "$tok" in *=*) ;; *) return 1 ;; esac

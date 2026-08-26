@@ -87,5 +87,10 @@ sed 's/persistence=sql/persistence=s*/' "$FIX/sample-spec-with-security-design.m
   exit $? )
 assert_eq "$?" "1" "a glob in the facts comment is not expanded"
 
+# a duplicated key with a conflicting value must not be silently resolved to the first match
+sed 's/persistence=sql/persistence=sql persistence=none/' "$FIX/sample-spec-with-security-design.md" > "$tmp/dup.md"
+preflight_security_facts_valid "$tmp/dup.md"
+assert_eq "$?" "1" "duplicate key is rejected"
+
 rm -rf "$tmp"
 exit $fail
