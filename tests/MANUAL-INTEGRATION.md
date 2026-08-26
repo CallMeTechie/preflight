@@ -123,7 +123,8 @@ the hash of `sample-plan.md`.
 
 **Command:**
 ```
-/preflight-spec tests/fixtures/sample-spec-cli-design.md
+cp tests/fixtures/sample-spec-cli-design.md docs/superpowers/specs/
+/preflight-spec docs/superpowers/specs/sample-spec-cli-design.md
 ```
 
 **Expected behavior:**
@@ -156,7 +157,8 @@ cp tests/fixtures/sample-spec-with-security-design.md docs/superpowers/specs/
 
 **Command:**
 ```
-/preflight-spec tests/fixtures/sample-spec-bearer-design.md
+cp tests/fixtures/sample-spec-bearer-design.md docs/superpowers/specs/
+/preflight-spec docs/superpowers/specs/sample-spec-bearer-design.md
 /preflight-plan tests/fixtures/sample-plan-bearer.md
 ```
 

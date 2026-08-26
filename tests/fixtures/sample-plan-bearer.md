@@ -3,7 +3,7 @@
 > **Note:** This file is a demo fixture for manual integration tests of the
 > preflight plugin. Not a real project.
 
-Spec: tests/fixtures/sample-spec-bearer-design.md
+Spec: docs/superpowers/specs/sample-spec-bearer-design.md
 
 ## Goal
 
