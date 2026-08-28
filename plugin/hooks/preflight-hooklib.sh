@@ -88,3 +88,26 @@ preflight_is_locked() {
 	age=$(( now - ts ))
 	[ "$age" -lt "$threshold" ]
 }
+
+# Return 0 if version <a> is strictly newer than version <b>. Dot-separated
+# fields compared numerically, left to right; a missing field reads as 0. No
+# `sort -V` (GNU-only, unreliable on BSD/macOS). When every shared field ties,
+# the version with more fields wins (1.0.0 is treated as newer than 1.0) —
+# this only matters for the trailing-zero-omission edge case, not for normal
+# releases.
+preflight_version_gt() {
+	local a="$1" b="$2"
+	local -a af bf
+	IFS='.' read -r -a af <<< "$a"
+	IFS='.' read -r -a bf <<< "$b"
+	local n=${#af[@]} i ai bi
+	[ "${#bf[@]}" -gt "$n" ] && n=${#bf[@]}
+	for (( i = 0; i < n; i++ )); do
+		ai="${af[i]:-0}"; bi="${bf[i]:-0}"
+		case "$ai" in ''|*[!0-9]*) ai=0 ;; esac
+		case "$bi" in ''|*[!0-9]*) bi=0 ;; esac
+		[ "$ai" -gt "$bi" ] && return 0
+		[ "$ai" -lt "$bi" ] && return 1
+	done
+	[ "${#af[@]}" -gt "${#bf[@]}" ]
+}
