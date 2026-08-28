@@ -22,8 +22,8 @@ these fixtures are written.
 **Expected behavior:**
 
 1. The skill sets the lock `.claude/.preflight-running`.
-2. A `cheap-explorer` checks file references for existence.
-3. A `cheap-reviewer` runs the author/reviewer dialog.
+2. A `preflight:factchecker` checks file references for existence.
+3. A `preflight:reviewer` runs the author/reviewer dialog.
 4. The review **finds all three intentional defects**:
    - **(a) Placeholder:** Requirement 4 contains `TODO: Clarify how the retry
      backoff interval is calculated.` — must be reported as an open placeholder.
@@ -54,7 +54,7 @@ these fixtures are written.
 
 1. The skill reads the `Spec:` line and loads `tests/fixtures/sample-spec-design.md`.
 2. Lock is set.
-3. Fact-check + 5 parallel `cheap-reviewer` stages (1–5) + consolidator.
+3. Fact-check + 5 parallel `preflight:reviewer` stages (1–5) + consolidator.
 4. The review **finds all four intentional defects**:
    - **(a) Missing coverage (Stage 1):** Push notifications from Spec Req. 5 are
      not covered by the plan — no task for Push/FCM/APNs.
@@ -116,6 +116,94 @@ the hash of `sample-plan.md`.
    before continuing.
 6. The review then runs identically to Scenario 2 (same defects expected).
 7. No crash or silent failure occurs in either the single-match or ambiguous case.
+
+---
+
+## Scenario 5 — CLI tool, no network surface
+
+**Command:**
+```
+cp tests/fixtures/sample-spec-cli-design.md docs/superpowers/specs/
+/preflight-spec docs/superpowers/specs/sample-spec-cli-design.md
+```
+
+**Expected behavior:**
+
+1. The profiler asks about `network_surface` and the seven non-network facts it cannot derive.
+2. `network_surface = none` settles `session_transport`, `renders_html` and `accepts_uploads`
+   through the consistency conditions — none of the three is asked.
+3. Ten of the twenty-four rules end up `not-applicable` without a question.
+4. The written block keeps `SEC-SECRET-01`, `SEC-DEP-01` and `SEC-INJECT-01` as `required`.
+
+---
+
+## Scenario 6 — Web app with a cookie session
+
+**Command:**
+```
+cp tests/fixtures/sample-spec-with-security-design.md docs/superpowers/specs/
+# delete the block between the markers, then:
+/preflight-spec docs/superpowers/specs/sample-spec-with-security-design.md
+```
+
+**Expected behavior:**
+
+1. `SEC-CSRF-01` and `SEC-SESS-01` come back `required`.
+2. The rewritten `facts` comment matches the one in the fixture.
+
+---
+
+## Scenario 7 — Bearer-token API
+
+**Command:**
+```
+cp tests/fixtures/sample-spec-bearer-design.md docs/superpowers/specs/
+/preflight-spec docs/superpowers/specs/sample-spec-bearer-design.md
+/preflight-plan tests/fixtures/sample-plan-bearer.md
+```
+
+**Expected behavior:**
+
+1. `SEC-CSRF-01` is `not-applicable` with a reason naming the transport.
+2. `SEC-TOKEN-01` is `required`; `SEC-XSS-01` and `SEC-CSP-01` are `not-applicable`.
+3. The plan review produces **no** CSRF finding — the `not-applicable` row is discarded by
+   stage 6, not counted as `uncovered`.
+
+This is the scenario that shows whether the rule really hangs on `session_transport` rather than
+on the existence of forms.
+
+---
+
+## Scenario 8 — Drift
+
+**Command:**
+```
+/preflight-plan tests/fixtures/sample-plan-upload.md
+```
+
+**Expected behavior:**
+
+1. Stage 3 emits a `NEW-SURFACE` line naming `accepts_uploads`, `no -> yes` and a location.
+2. `accepts_uploads = yes` would trigger `SEC-UPLOAD-01` (`required`, not in the block), so
+   stage 6 grades it a **Blocker**.
+3. The report points at `/preflight-profile --redo`.
+
+---
+
+## Scenario 9 — Agent dispatch
+
+**Command:**
+```
+/preflight-spec <any spec>
+```
+
+**Expected behavior:**
+
+1. `preflight:factchecker` appears as a dispatched subagent for the fact-check step.
+2. `preflight:reviewer` appears as a dispatched subagent for the review step.
+3. The report carries **no** fallback note. A report saying
+   "Tiering inaktiv: `preflight:<name>` nicht auflösbar, Lauf auf `<fallback>`" means
+   registration failed — a different failure from "no note, but also no dispatch". Both are bugs.
 
 ---
 

@@ -88,3 +88,29 @@ preflight_is_locked() {
 	age=$(( now - ts ))
 	[ "$age" -lt "$threshold" ]
 }
+
+# Return 0 if version <a> is strictly newer than version <b>. Dot-separated
+# fields compared numerically, left to right, zero-padded: a missing field
+# reads as 0, so "1.0" and "1.0.0" compare equal (neither is greater) —
+# trailing-zero style must never matter, since it can differ between the
+# local plugin.json and the remote marketplace.json. A field that isn't a
+# plain non-negative integer (e.g. the "0-rc1" in "1.0.0-rc1") also reads as
+# 0 rather than aborting, so a malformed or pre-release field can't crash the
+# hook or be mistaken for a real increment. No `sort -V` (GNU-only,
+# unreliable on BSD/macOS).
+preflight_version_gt() {
+	local a="$1" b="$2"
+	local -a af bf
+	IFS='.' read -r -a af <<< "$a"
+	IFS='.' read -r -a bf <<< "$b"
+	local n=${#af[@]} i ai bi
+	[ "${#bf[@]}" -gt "$n" ] && n=${#bf[@]}
+	for (( i = 0; i < n; i++ )); do
+		ai="${af[i]:-0}"; bi="${bf[i]:-0}"
+		case "$ai" in ''|*[!0-9]*) ai=0 ;; esac
+		case "$bi" in ''|*[!0-9]*) bi=0 ;; esac
+		[ "$ai" -gt "$bi" ] && return 0
+		[ "$ai" -lt "$bi" ] && return 1
+	done
+	return 1
+}

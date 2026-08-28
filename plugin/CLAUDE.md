@@ -6,7 +6,7 @@ Advisory nudge + review skill for superpowers spec and plan documents.
 
 ### 1a. Hook — `plugin/hooks/detect-spec-plan-write.sh`
 
-PostToolUse hook. Fired after every `Write` call.
+PostToolUse hook. Fired after every `Write` and `Edit` call.
 - Detects spec files (`docs/superpowers/specs/*-design.md`) and plan files
   (`docs/superpowers/plans/*.md`) by path.
 - **Never blocks.** On a match it emits `hookSpecificOutput.additionalContext` —
@@ -25,6 +25,22 @@ orphaned and safe to remove — this makes the review **abort-safe**: preflight 
 itself on the next session with no manual cleanup. **Manual clear** (same session):
 `rm -f <project>/.claude/.preflight-running`.
 
+### 1c. Hook — `plugin/hooks/check-plugin-update.sh`
+
+SessionStart hook. Claude Code has no built-in update notification for plugins, so a
+user who never runs `claude plugin update` by hand stays on an old preflight version
+indefinitely. At most once a day, this hook compares the installed version
+(`plugin/.claude-plugin/plugin.json`) against the version published in the
+marketplace manifest of the repo named in that same file's `repository` field —
+so a fork checks its own repo, not upstream. A newer version prints a short
+three-line nudge to stderr; anything else (up to date, offline, opted out,
+throttled) is silent. **Never blocks**, never writes to stdout, always exits 0.
+Opt out with `PREFLIGHT_NO_UPDATE_CHECK=1` (env) or by creating
+`$HOME/.claude/.preflight-no-update-check`; either way, no throttle timestamp is
+recorded — an opted-out user leaves no trace. Test seam:
+`PREFLIGHT_UPDATE_MANIFEST=<path>` reads the manifest from a local file instead of
+fetching it, so the test suite never touches the network.
+
 ### 2. Skill — `plugin/skills/reviewing-spec-and-plan/`
 
 Core logic. Triggered by the hook nudge **or** directly by a command.
@@ -32,9 +48,9 @@ Core logic. Triggered by the hook nudge **or** directly by a command.
 **Spec mode:** adversarial Author/Reviewer dialogue (up to `max-rounds`).
 **Plan mode:** 6-stage review chain (Stages 1–5 in parallel, Stage 6 = Consolidator).
 
-Flow: Set lock → Fact-check (`cheap-explorer`) → Review (`cheap-reviewer`)
-→ Consolidate findings → Snapshot + Fixes + Diff → Adaptive re-review →
-Release lock → Write state → Report + open design forks.
+Flow: Set lock → Snapshot → Security profile → Fact-check (`preflight:factchecker`)
+→ Review (`preflight:reviewer`) → Consolidate + Fixes + Diff → Adaptive re-review
+→ Release lock → Write state → Report + open design forks.
 
 ### 3. Commands — `plugin/commands/`
 
@@ -42,13 +58,43 @@ Release lock → Write state → Report + open design forks.
 |----------------------|------------------------------------------------------|
 | `/preflight-spec`    | Starts the skill in Spec mode for `[path]`           |
 | `/preflight-plan`    | Starts the skill in Plan mode for `[path]`           |
+| `/preflight-profile` | Security profile for `[path]`; `--review` / `--redo`  |
 
 Without a `path` argument the most recent matching file in the respective directory
 is used. `/preflight-spec` accepts an optional second parameter `max-rounds` (default 5).
 
+### 4. Agents — `plugin/agents/`
+
+| Agent | Role | Tools | Model |
+|-------|------|-------|-------|
+| `preflight:factchecker` | Step 5, references against the codebase | `Read, Grep, Glob, Bash` | `sonnet` |
+| `preflight:reviewer` | Step 6, dialogue and the five plan stages | `Read, Grep, Glob, Bash` | `inherit` |
+| `preflight:editor` | Step 7, large mechanical fix-edits | `Read, Edit, Write, Bash` | `sonnet` |
+
+`factchecker` and `reviewer` carry no `Write` or `Edit`, and
+`tests/test_agents_wellformed.sh` holds that: exactly one file under
+`plugin/agents/` may carry write tools, and it must be `editor.md`.
+
+That is **not** a guarantee that the two cannot write. Both carry `Bash`, and a
+shell writes perfectly well (`> f`, `sed -i`, `tee`) — the factchecker needs the
+shell to verify versions, paths and git state, so removing it is not on the
+table. The prohibition is therefore **prompt-borne**: it is stated in each agent
+body, and `tests/test_agents_wellformed.sh` asserts that every `Bash`-carrying
+agent states it. A named, accepted residual risk — the same shape as the
+security block's protection against `editor` (see the skill's Step 7).
+
+### 5. Security profiler
+
+`/preflight-profile` and step 4 of the skill. Derives eleven project facts, applies
+`references/security-matrix.md`, and writes a marked block into the spec. See
+`references/security-profile.md`. The shell side lives in
+`plugin/lib/preflight-securitylib.sh` — deliberately not in `plugin/hooks/`, which the
+PostToolUse hook sources on every `Write` and `Edit` and which stays free of domain
+knowledge.
+
 ## State Files
 
-Both located under `<project-root>/.claude/`:
+All located under `<project-root>/.claude/`:
 
 | File                       | Meaning                                                      |
 |----------------------------|--------------------------------------------------------------|
@@ -58,6 +104,20 @@ Both located under `<project-root>/.claude/`:
 |                            | it stuck (see hook 1b).                                       |
 | `.preflight-reviewed`      | One line `<sha256>\t<path>` per reviewed file.               |
 |                            | A new hash for the same file → hook nudges again.            |
+|                            | Profile mode never writes it — no review ran.                |
+| `.preflight-secblock`      | Copy of the security block, taken in the skill's Step 7 to   |
+|                            | detect an edit inside the write-protected region. Deleted    |
+|                            | together with the lock in Step 9.                            |
+
+Two more, unrelated to a project and never under `<project-root>/.claude/` — both live
+under `$HOME/.claude/` (per-user, not per-project) and belong to hook 1c:
+
+| File                              | Meaning                                                |
+|------------------------------------|--------------------------------------------------------|
+| `.preflight-update-check`          | Unix timestamp of the last update-check attempt        |
+|                                     | (success or failure). Throttles the check to once/day. |
+| `.preflight-no-update-check`       | Presence alone disables the check permanently. Not     |
+|                                     | written by the hook — created by the user to opt out.  |
 
 ## Advisory Nature
 

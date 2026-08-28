@@ -23,6 +23,16 @@
 						"description": "Clear an orphaned preflight review lock left by an interrupted run"
 					}
 				]
+			},
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-plugin-update.sh",
+						"timeout": 10,
+						"description": "Notify (stderr only) when a newer preflight version is available, at most once a day"
+					}
+				]
 			}
 		]
 	}
