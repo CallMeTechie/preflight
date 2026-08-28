@@ -10,11 +10,20 @@ ok() { echo "ok: $1"; }
 bad() { echo "FAIL: $1"; fail=1; }
 
 # --- preflight_version_gt, direct ---------------------------------------
+# Trailing-zero style must never matter (a difference between plugin.json and
+# marketplace.json here must not make the hook cry wolf), and numeric
+# comparison must not degrade to lexical comparison.
 
-preflight_version_gt "0.10.0" "0.2.0" && ok "version_gt: 0.10.0 > 0.2.0" || bad "version_gt: 0.10.0 > 0.2.0"
-preflight_version_gt "1.0.0" "1.0" && ok "version_gt: 1.0.0 > 1.0" || bad "version_gt: 1.0.0 > 1.0"
-preflight_version_gt "0.2.0" "0.2.0" && bad "version_gt: 0.2.0 > 0.2.0 (should be false)" || ok "version_gt: 0.2.0 not > 0.2.0"
+preflight_version_gt "0.10.0" "0.2.0" && ok "version_gt: 0.10.0 > 0.2.0 (numeric, not lexical)" || bad "version_gt: 0.10.0 > 0.2.0"
+preflight_version_gt "0.3.0" "0.2.9" && ok "version_gt: 0.3.0 > 0.2.9" || bad "version_gt: 0.3.0 > 0.2.9"
 preflight_version_gt "0.2.0" "0.3.0" && bad "version_gt: 0.2.0 > 0.3.0 (should be false)" || ok "version_gt: 0.2.0 not > 0.3.0"
+preflight_version_gt "0.2.0" "0.2.0" && bad "version_gt: 0.2.0 > 0.2.0 (should be false)" || ok "version_gt: 0.2.0 not > 0.2.0"
+preflight_version_gt "1.0.0" "1.0" && bad "version_gt: 1.0.0 > 1.0 (trailing zero must not count, should be false)" || ok "version_gt: 1.0.0 not > 1.0 (trailing zero doesn't count)"
+preflight_version_gt "1.0" "1.0.0" && bad "version_gt: 1.0 > 1.0.0 (should be false)" || ok "version_gt: 1.0 not > 1.0.0 (symmetric)"
+preflight_version_gt "0.2.0" "0.2" && bad "version_gt: 0.2.0 > 0.2 (trailing zero must not count, should be false)" || ok "version_gt: 0.2.0 not > 0.2 (trailing zero doesn't count)"
+preflight_version_gt "0.2" "0.2.0" && bad "version_gt: 0.2 > 0.2.0 (should be false)" || ok "version_gt: 0.2 not > 0.2.0 (symmetric)"
+# Non-numeric field: reads as 0, never crashes, never accidentally wins.
+preflight_version_gt "1.2.0-rc1" "1.2.0" && bad "version_gt: 1.2.0-rc1 > 1.2.0 (non-numeric field should read as 0, should be false)" || ok "version_gt: non-numeric field reads as 0, doesn't crash or win"
 
 # --- hook, end to end -----------------------------------------------------
 # HOME is redirected into the sandbox for every run below so neither the
