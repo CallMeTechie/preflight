@@ -62,6 +62,17 @@ so a tool with no accounts, no persistence, and no PII still ends up with a
 short block that keeps `SEC-SECRET-01`, `SEC-DEP-01`, and `SEC-INJECT-01`
 as `required`.
 
+`preflight` also gains a **new network behaviour**, worth calling out plainly rather
+than leaving it in the fine print: a `SessionStart` hook checks, at most once a day,
+whether a newer preflight version is published. It sends one GET request to
+`https://raw.githubusercontent.com/CallMeTechie/preflight/HEAD/.claude-plugin/marketplace.json`
+(or your fork's repo, if `plugin.json` points elsewhere) — nothing else leaves your
+machine, no project content, no telemetry. When a newer version exists it prints a
+short note to stderr with the update command; otherwise it says nothing. Turn it off
+with `PREFLIGHT_NO_UPDATE_CHECK=1`, or permanently by creating
+`$HOME/.claude/.preflight-no-update-check` — either way nothing is written or checked
+again.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

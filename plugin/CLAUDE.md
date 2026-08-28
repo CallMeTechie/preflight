@@ -25,6 +25,22 @@ orphaned and safe to remove — this makes the review **abort-safe**: preflight 
 itself on the next session with no manual cleanup. **Manual clear** (same session):
 `rm -f <project>/.claude/.preflight-running`.
 
+### 1c. Hook — `plugin/hooks/check-plugin-update.sh`
+
+SessionStart hook. Claude Code has no built-in update notification for plugins, so a
+user who never runs `claude plugin update` by hand stays on an old preflight version
+indefinitely. At most once a day, this hook compares the installed version
+(`plugin/.claude-plugin/plugin.json`) against the version published in the
+marketplace manifest of the repo named in that same file's `repository` field —
+so a fork checks its own repo, not upstream. A newer version prints a short
+three-line nudge to stderr; anything else (up to date, offline, opted out,
+throttled) is silent. **Never blocks**, never writes to stdout, always exits 0.
+Opt out with `PREFLIGHT_NO_UPDATE_CHECK=1` (env) or by creating
+`$HOME/.claude/.preflight-no-update-check`; either way, no throttle timestamp is
+recorded — an opted-out user leaves no trace. Test seam:
+`PREFLIGHT_UPDATE_MANIFEST=<path>` reads the manifest from a local file instead of
+fetching it, so the test suite never touches the network.
+
 ### 2. Skill — `plugin/skills/reviewing-spec-and-plan/`
 
 Core logic. Triggered by the hook nudge **or** directly by a command.
@@ -92,6 +108,16 @@ All located under `<project-root>/.claude/`:
 | `.preflight-secblock`      | Copy of the security block, taken in the skill's Step 7 to   |
 |                            | detect an edit inside the write-protected region. Deleted    |
 |                            | together with the lock in Step 9.                            |
+
+Two more, unrelated to a project and never under `<project-root>/.claude/` — both live
+under `$HOME/.claude/` (per-user, not per-project) and belong to hook 1c:
+
+| File                              | Meaning                                                |
+|------------------------------------|--------------------------------------------------------|
+| `.preflight-update-check`          | Unix timestamp of the last update-check attempt        |
+|                                     | (success or failure). Throttles the check to once/day. |
+| `.preflight-no-update-check`       | Presence alone disables the check permanently. Not     |
+|                                     | written by the hook — created by the user to opt out.  |
 
 ## Advisory Nature
 
