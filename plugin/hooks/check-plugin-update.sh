@@ -22,6 +22,10 @@ HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 # must still be drained.
 cat >/dev/null
 
+# No HOME -> nowhere to read/write state; bail before any $HOME reference
+# trips `set -u`.
+[ -n "${HOME:-}" ] || exit 0
+
 # 1. Explicit opt-out via environment.
 [ -n "${PREFLIGHT_NO_UPDATE_CHECK:-}" ] && exit 0
 
