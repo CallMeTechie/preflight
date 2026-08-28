@@ -38,7 +38,7 @@ NO_CHECK_FILE="$HOME/.claude/.preflight-no-update-check"
 THROTTLE_FILE="$HOME/.claude/.preflight-update-check"
 if [ -f "$THROTTLE_FILE" ]; then
 	now="$(date +%s 2>/dev/null)" || now=""
-	ts="$(cat -- "$THROTTLE_FILE" 2>/dev/null)"
+	ts="$(cat -- "$THROTTLE_FILE" 2>/dev/null | tr -d '\000')"
 	case "$ts" in ''|*[!0-9]*) ts="" ;; esac
 	if [ -n "$now" ] && [ -n "$ts" ]; then
 		age=$(( now - ts ))
@@ -76,13 +76,13 @@ esac
 MANIFEST=""
 FETCH_OK=1
 if [ -n "${PREFLIGHT_UPDATE_MANIFEST:-}" ]; then
-	MANIFEST="$(cat -- "$PREFLIGHT_UPDATE_MANIFEST" 2>/dev/null)"
-	FETCH_OK=$?
+	MANIFEST="$(cat -- "$PREFLIGHT_UPDATE_MANIFEST" 2>/dev/null | tr -d '\000')"
+	FETCH_OK=${PIPESTATUS[0]}
 	[ -n "$MANIFEST" ] || FETCH_OK=1
 elif command -v curl >/dev/null 2>&1; then
 	MANIFEST_URL="https://raw.githubusercontent.com/$OWNER_REPO/HEAD/.claude-plugin/marketplace.json"
-	MANIFEST="$(curl -fsS --max-time 3 -- "$MANIFEST_URL" 2>/dev/null)"
-	FETCH_OK=$?
+	MANIFEST="$(curl -fsS --max-time 3 -- "$MANIFEST_URL" 2>/dev/null | tr -d '\000')"
+	FETCH_OK=${PIPESTATUS[0]}
 fi
 
 mkdir -p "$HOME/.claude" 2>/dev/null
@@ -92,7 +92,7 @@ date +%s > "$THROTTLE_FILE" 2>/dev/null
 
 # 7. Compare versions; only speak up when the remote is strictly newer.
 REMOTE_VERSION="$(printf '%s' "$MANIFEST" | jq -r --arg name "$LOCAL_NAME" \
-	'(.plugins // [])[] | select(.name == $name) | .version // empty' 2>/dev/null | head -n 1)"
+	'(.plugins // [])[] | select(.name == $name) | .version // empty' 2>/dev/null | head -n 1 | tr -d '\000')"
 [ -n "$REMOTE_VERSION" ] || exit 0
 
 if preflight_version_gt "$REMOTE_VERSION" "$LOCAL_VERSION"; then

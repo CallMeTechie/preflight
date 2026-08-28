@@ -131,4 +131,19 @@ out="$(cat "$h/out.txt")"; err="$(cat "$h/err.txt")"
 [ -f "$h/.claude/.preflight-update-check" ] && ok "missing manifest file: throttle timestamp still written" || bad "missing manifest file: throttle not written"
 rm -rf "$h"
 
+# (10) Throttle file contains an embedded NUL byte (partially written file,
+# zero-fill on crash recovery, or two sessions writing without locking) on an
+# otherwise-silent branch (equal remote version). Must produce empty stdout
+# AND empty stderr -- a stray "ignored null byte in input" warning from
+# bash's own command substitution would fail this even though the exit code
+# is still 0, which is why both streams are asserted, not just the exit code.
+h="$(fresh_home)"
+printf 'abc\000def' > "$h/.claude/.preflight-update-check"
+m="$(manifest_with_version "$h" "0.2.0")"
+HOME="$h" PREFLIGHT_UPDATE_MANIFEST="$m" bash -c 'printf "{}" | bash "$0"' "$HOOK" >"$h/out.txt" 2>"$h/err.txt"
+rc=$?
+out="$(cat "$h/out.txt")"; err="$(cat "$h/err.txt")"
+[ "$rc" -eq 0 ] && [ -z "$out" ] && [ -z "$err" ] && ok "NUL byte in throttle file: silent (no bash warning), exit 0" || bad "NUL byte in throttle file: rc=$rc out='$out' err='$err'"
+rm -rf "$h"
+
 exit $fail
