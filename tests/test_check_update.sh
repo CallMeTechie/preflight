@@ -46,19 +46,26 @@ manifest_with_version() {
 
 old_ts() { echo $(( $(date +%s) - 200000 )); }   # well past the 86400s throttle
 
+# The installed version is read from the manifest the hook itself reads. Hard-coding
+# it here made this file go red on every version bump, which trains the reader to
+# "fix" a real regression by editing the expectation.
+INSTALLED="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$HERE/../plugin/.claude-plugin/plugin.json" | head -1)"
+[ -n "$INSTALLED" ] && ok "installed version read from plugin.json ($INSTALLED)" \
+	|| bad "could not read the installed version from plugin.json"
+
 # (1) Newer version in manifest -> stderr message with both version numbers, stdout empty.
 h="$(fresh_home)"
 m="$(manifest_with_version "$h" "9.9.9")"
 out="$(HOME="$h" PREFLIGHT_UPDATE_MANIFEST="$m" bash -c 'printf "{}" | bash "$0"' "$HOOK" 2>"$h/err.txt")"
 err="$(cat "$h/err.txt")"
 [ -z "$out" ] && ok "newer version: stdout empty" || bad "newer version: stdout not empty ($out)"
-printf '%s' "$err" | grep -q "9.9.9" && printf '%s' "$err" | grep -q "0.2.0" && \
+printf '%s' "$err" | grep -q "9.9.9" && printf '%s' "$err" | grep -q "$INSTALLED" && \
 	ok "newer version: stderr names both versions" || bad "newer version: stderr missing a version ($err)"
 rm -rf "$h"
 
 # (2) Equal version -> no output at all.
 h="$(fresh_home)"
-m="$(manifest_with_version "$h" "0.2.0")"
+m="$(manifest_with_version "$h" "$INSTALLED")"
 out="$(HOME="$h" PREFLIGHT_UPDATE_MANIFEST="$m" bash -c 'printf "{}" | bash "$0"' "$HOOK" 2>"$h/err.txt")"
 err="$(cat "$h/err.txt")"
 [ -z "$out" ] && [ -z "$err" ] && ok "equal version: silent" || bad "equal version: unexpected output (out='$out' err='$err')"
@@ -139,7 +146,7 @@ rm -rf "$h"
 # is still 0, which is why both streams are asserted, not just the exit code.
 h="$(fresh_home)"
 printf 'abc\000def' > "$h/.claude/.preflight-update-check"
-m="$(manifest_with_version "$h" "0.2.0")"
+m="$(manifest_with_version "$h" "$INSTALLED")"
 HOME="$h" PREFLIGHT_UPDATE_MANIFEST="$m" bash -c 'printf "{}" | bash "$0"' "$HOOK" >"$h/out.txt" 2>"$h/err.txt"
 rc=$?
 out="$(cat "$h/out.txt")"; err="$(cat "$h/err.txt")"
