@@ -22,6 +22,8 @@ Three decoupled building blocks:
 
 **Plans** are reviewed through a **6-stage chain** — five parallel reviewers (Completeness & Scope · Architecture & Convention Fit · Security · Edge Cases & Failure Modes · Sequencing & Effort) plus a consolidator that merges, de-duplicates, prioritises (Blocker vs. nice-to-have), applies fixes, and gives the Go/No-Go.
 
+Stage 5 additionally holds every task to two lines: a `Tests:` budget saying what will be tested, and a `Parallel:` line naming the tasks it may run alongside. A plan that does not say which tasks are independent gets executed strictly one after another — the annotations are what lets execution run them side by side. Both are Important findings that get fixed in place; neither ever turns a Go into a No-Go.
+
 A dedicated fact-check classifies every code reference as *missing* (a real finding) versus *to-be-created* (a deliverable — never flagged), so greenfield plans aren't penalised for files that don't exist yet.
 
 ## Installation

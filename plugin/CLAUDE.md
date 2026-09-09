@@ -48,6 +48,12 @@ Core logic. Triggered by the hook nudge **or** directly by a command.
 **Spec mode:** adversarial Author/Reviewer dialogue (up to `max-rounds`).
 **Plan mode:** 6-stage review chain (Stages 1–5 in parallel, Stage 6 = Consolidator).
 
+Two stages emit a binding block that Stage 6 turns into findings by a fixed rule
+instead of re-judging it: `SEC-COVERAGE` from Stage 3 (moves the verdict) and
+`TASK-READINESS` from Stage 5 (never moves the verdict — it only makes every task
+declare its `Tests:` budget and its `Parallel:` peers, so execution can run tasks
+side by side instead of strictly one after another).
+
 Flow: Set lock → Snapshot → Security profile → Fact-check (`preflight:factchecker`)
 → Review (`preflight:reviewer`) → Consolidate + Fixes + Diff → Adaptive re-review
 → Release lock → Write state → Report + open design forks.
