@@ -78,17 +78,24 @@ Important/Optional) with concrete replacement text + source location and optiona
    **(a) Parallelism.** A plan that does not say which tasks may run at the same time
    is executed strictly one after another, even where nothing forces that order — and
    that is where a day of execution time goes. Every task therefore carries a
-   `Parallel:` line naming the tasks it may run alongside, or `none` plus the reason
-   that blocks it. Two tasks may run alongside each other when they touch no file in
+   `**Parallel:**` line naming the tasks it may run alongside, or `none` plus the
+   reason that blocks it. Two tasks may run alongside each other when they touch no file in
    common and neither consumes the other's output. Judge that from the file paths the
    tasks name, not from the phase they sit in: tasks in one phase are not automatically
    parallel, and tasks in different phases are not automatically sequential.
 
-   **(b) Test budget.** Every task carries a `Tests:` line naming what will be tested,
-   or `none` plus the reason. A task without one is where the implementation later
-   invents its own scope — either a suite nobody asked for, or no test at all. Judge
-   the budget too, not just its presence: a `Tests:` line demanding a case per branch
-   is as much a finding as a missing one.
+   **(b) Test budget.** Every task carries a `**Tests:**` line naming what will be
+   tested, or `none` plus the reason. A task without one is where the implementation
+   later invents its own scope — either a suite nobody asked for, or no test at all.
+   Judge the budget too, not just its presence: a `**Tests:**` line demanding a case
+   per branch is as much a finding as a missing one.
+
+   **Both labels are bold**, exactly like the `**Files:**` and `**Interfaces:**` a
+   plan already carries, and both sit inside the `### Task N` block so that
+   superpowers' `task-brief` cut hands them to the implementer. The markup is not
+   cosmetic: mockingbird's `carrying-design-through` keys its preserve rule and its
+   ordering on that exact form, so a bare `Tests:` is invisible to the other plugin
+   writing into the same block. When you supply a replacement line, supply it bold.
 
    Both lines are absent from nearly every plan written today. That is the normal
    case, not an anomaly, so do not report it as a defect of this particular author.
