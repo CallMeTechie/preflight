@@ -128,6 +128,11 @@ the document content. Only carry findings of type `missing` /
    are **not** re-validated adversarially — they are taken as they are. What is
    arguable is the classification, and that argument belongs in Stage 3. Without
    this exception the adversarial pass eats the determinism the rule promises.
+
+   The same exception covers `TASK-READINESS` from Stage 5 together with the task
+   readiness rule: whether a task carries a `Tests:` or `Parallel:` line is a fact
+   about the document, not a judgement to argue with. A defence of the shape "the
+   order is obvious anyway" is exactly the reasoning the rule exists to overrule.
 2. Apply ALL fixable findings directly to the document (large mechanical edits via
    `preflight:editor`). Do NOT guess on genuine `design_forks` — collect them for Step 9.
 
