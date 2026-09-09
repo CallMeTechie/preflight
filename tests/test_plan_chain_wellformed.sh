@@ -16,10 +16,15 @@ ok "plan-chain.md and SKILL.md exist"
 # other to the reviewer's taste, and a taste is not a deterministic classification.
 stage5="$(sed -n '/^5\. \*\*Sequencing/,/^\*\*Stage 6/p' "$C")"
 [ -n "$stage5" ] && ok "Stage 5 section found" || bad "Stage 5 section not found"
-printf '%s' "$stage5" | grep -q '`Parallel:`' \
-  && ok "Stage 5 demands a Parallel: line" || bad "Stage 5 never names the Parallel: line"
-printf '%s' "$stage5" | grep -q '`Tests:`' \
-  && ok "Stage 5 demands a Tests: line" || bad "Stage 5 never names the Tests: line"
+# Bold, exactly as **Files:** and **Interfaces:** already are. mockingbird keys its
+# preserve rule on that form, so a bare 'Tests:' is invisible to the other plugin
+# writing into the same task block.
+printf '%s' "$stage5" | grep -q '`\*\*Parallel:\*\*`' \
+  && ok "Stage 5 demands a bold **Parallel:** line" || bad "Stage 5 does not demand the bold **Parallel:** form"
+printf '%s' "$stage5" | grep -q '`\*\*Tests:\*\*`' \
+  && ok "Stage 5 demands a bold **Tests:** line" || bad "Stage 5 does not demand the bold **Tests:** form"
+printf '%s' "$stage5" | grep -q 'Both labels are bold' \
+  && ok "Stage 5 states why the markup matters" || bad "Stage 5 no longer explains the bold requirement"
 
 # The block is the interface to Stage 6. Both columns must appear in the format spec.
 printf '%s' "$stage5" | grep -q 'TASK-READINESS' \
